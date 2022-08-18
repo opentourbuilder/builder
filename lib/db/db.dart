@@ -5,6 +5,21 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart' as uuid_lib;
 
+late EvresiDatabase _db;
+
+Future<void> initEvresiDatabase() async {
+  /*var dir = await getApplicationSupportDirectory();
+  dir.create(recursive: true);
+
+  _db = EvresiDatabase();
+  await _db.open(p.join(dir.path, 'main.db'));*/
+
+  _db = EvresiDatabase();
+  await _db.open(inMemoryDatabasePath);
+}
+
+EvresiDatabase get db => _db;
+
 class EvresiDatabase {
   late Database _db;
 
@@ -35,10 +50,10 @@ class EvresiDatabase {
   Future<void> commit() async {}
 
   /// Requests that an event matching the given descriptor be sent on [events].
-  void requestEvent(EventDescriptor desc) {
+  void requestEvent(EventDescriptor desc) async {
     _events.add(Event._(
       desc: desc,
-      value: desc._observe(this),
+      value: await desc._observe(this),
     ));
   }
 
@@ -47,8 +62,8 @@ class EvresiDatabase {
     var rows = await _db.query(
       _symTour,
       columns: [_symName, _symDesc],
-      where: "hex($_symId) = ?",
-      whereArgs: [tourId.toHex()],
+      where: "$_symId = ?",
+      whereArgs: [tourId.bytes],
     );
 
     return rows.isEmpty ? null : Tour._fromRow(rows[0]);
@@ -61,8 +76,8 @@ class EvresiDatabase {
         ...tour._toRow(),
         _symRevision: _currentRevision.bytes,
       },
-      where: "hex($_symId) = ?",
-      whereArgs: [tourId.toHex()],
+      where: "$_symId = ?",
+      whereArgs: [tourId.bytes],
     );
 
     // in case the tour name was changed
@@ -89,8 +104,8 @@ class EvresiDatabase {
     var rows = await _db.query(
       _symWaypoint,
       columns: [_symName, _symDesc, _symLat, _symLng, _symNarrationPath],
-      where: "hex($_symId) = ?",
-      whereArgs: [waypointId.toHex()],
+      where: "$_symId = ?",
+      whereArgs: [waypointId.bytes],
     );
 
     return rows.isEmpty ? null : Waypoint._fromRow(rows[0]);
@@ -107,8 +122,8 @@ class EvresiDatabase {
         ...waypoint._toRow(),
         _symRevision: _currentRevision.bytes,
       },
-      where: "hex($_symTour) = ? AND hex($_symId) = ?",
-      whereArgs: [waypointId.toHex(), tourId.toHex()],
+      where: "$_symTour = ? AND $_symId = ?",
+      whereArgs: [waypointId.bytes, tourId.bytes],
     );
 
     requestEvent(WaypointsEventDescriptor(tourId: tourId));
@@ -144,8 +159,8 @@ class EvresiDatabase {
     var allWaypoints = (await _db.query(
       _symWaypoint,
       columns: [_symId],
-      where: "hex($_symTour) = ?",
-      whereArgs: [tourId.toHex()],
+      where: "$_symTour = ?",
+      whereArgs: [tourId.bytes],
     ))
         .map((row) => Uuid(row[_symId]! as Uint8List))
         .toList();
@@ -161,8 +176,8 @@ class EvresiDatabase {
         {
           _symOrder: order,
         },
-        where: "hex($_symId) = ?",
-        whereArgs: [waypointId.toHex()],
+        where: "$_symId = ?",
+        whereArgs: [waypointId.bytes],
       );
       order++;
     }
@@ -175,8 +190,8 @@ class EvresiDatabase {
         {
           _symOrder: null,
         },
-        where: "hex($_symId) = ?",
-        whereArgs: [waypointId.toHex()],
+        where: "$_symId = ?",
+        whereArgs: [waypointId.bytes],
       );
     }
 
@@ -186,8 +201,8 @@ class EvresiDatabase {
       {
         _symRevision: _currentRevision.bytes,
       },
-      where: "hex($_symId) = ?",
-      whereArgs: [tourId.toHex()],
+      where: "$_symId = ?",
+      whereArgs: [tourId.bytes],
     );
 
     // execute the batch
@@ -201,8 +216,8 @@ class EvresiDatabase {
     var rows = await _db.query(
       _symPoi,
       columns: [_symName, _symDesc, _symLat, _symLng],
-      where: "hex($_symId) = ?",
-      whereArgs: [poiId.toHex()],
+      where: "$_symId = ?",
+      whereArgs: [poiId.bytes],
     );
 
     return rows.isEmpty ? null : Poi._fromRow(rows[0]);
@@ -215,8 +230,8 @@ class EvresiDatabase {
         ...poi._toRow(),
         _symRevision: _currentRevision.bytes,
       },
-      where: "hex($_symId) = ?",
-      whereArgs: [poiId.toHex()],
+      where: "$_symId = ?",
+      whereArgs: [poiId.bytes],
     );
 
     requestEvent(const PoisEventDescriptor());
@@ -356,8 +371,8 @@ class WaypointsEventDescriptor extends EventDescriptor<List<Item>> {
     var rows = await db._db.query(
       _symWaypoint,
       columns: [_symId, _symName],
-      where: "hex($_symTour) = ?",
-      whereArgs: [tourId.toHex()],
+      where: "$_symTour = ?",
+      whereArgs: [tourId.bytes],
       orderBy: _symName,
     );
 
@@ -456,28 +471,26 @@ class Uuid {
 }
 
 // All of the column and table names, so we can rely on the IDE to prevent typos.
-const _symItem = '"item"';
-const _symPath = '"path"';
-const _symOrder = '"order"';
-const _symId = '"id"';
-const _symName = '"name"';
-const _symDesc = '"desc"';
-const _symLat = '"lat"';
-const _symLng = '"lng"';
-const _symRevision = '"revision"';
-const _symCreated = '"created"';
-const _symTimestamp = '"timestamp"';
-const _symUser = '"user"';
-const _symCommitted = '"committed"';
-const _symNarrationPath = '"narration_path"';
-const _symTour = '"tour"';
-const _symWaypoint = '"waypoint"';
-const _symPoi = '"poi"';
-const _symGallery = '"gallery"';
+const _symItem = 'item';
+const _symPath = 'path';
+const _symOrder = '_order'; // get around keyword
+const _symId = 'id';
+const _symName = 'name';
+const _symDesc = 'desc';
+const _symLat = 'lat';
+const _symLng = 'lng';
+const _symRevision = 'revision';
+const _symCreated = 'created';
+const _symTimestamp = 'timestamp';
+const _symUser = 'user';
+const _symCommitted = 'committed';
+const _symNarrationPath = 'narration_path';
+const _symTour = 'tour';
+const _symWaypoint = 'waypoint';
+const _symPoi = 'poi';
+const _symGallery = 'gallery';
 
 const _sqlOnCreate = """
-  BEGIN TRANSACTION;
-
   CREATE TABLE IF NOT EXISTS $_symGallery (
      $_symItem BLOB NOT NULL,
      $_symPath TEXT NOT NULL,
@@ -532,6 +545,4 @@ const _sqlOnCreate = """
     FOREIGN KEY ($_symRevision) REFERENCES  $_symRevision ($_symId),
     FOREIGN KEY ($_symCreated) REFERENCES  $_symRevision ($_symId)
   );
-
-  COMMIT;
 """;
