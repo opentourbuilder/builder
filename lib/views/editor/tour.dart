@@ -1,29 +1,81 @@
 import 'package:flutter/material.dart';
 
+import '../../db/db.dart';
+
 class TourScreen extends StatefulWidget {
   const TourScreen({Key? key, required this.tourId}) : super(key: key);
 
-  final String tourId;
+  final Uuid tourId;
 
   @override
   State<TourScreen> createState() => _TourScreenState();
 }
 
 class _TourScreenState extends State<TourScreen> {
-  String? _tour;
+  Tour? _tour;
+  bool _tourLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    db.loadTour(widget.tourId).then((tour) {
+      setState(() {
+        _tour = tour;
+        _tourLoaded = true;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_tour != null) {
+    Widget inner;
+    if (_tour == null) {
+      inner = const Text("Error: tour not found!");
+    } else {
       var tour = _tour!;
-
-      return Column(
+      inner = Column(
         children: [
-          Text(tour),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: TextEditingController(text: tour.name),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      labelText: "Title",
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Save"),
+                ),
+              ],
+            ),
+          ),
+          const Divider(
+            height: 1.0,
+            thickness: 1.0,
+          ),
         ],
       );
-    } else {
-      return const Text("Error: tour not found!");
     }
+
+    return Stack(
+      children: [
+        if (!_tourLoaded) const Center(child: CircularProgressIndicator()),
+        AnimatedOpacity(
+          opacity: _tourLoaded ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 100),
+          child: inner,
+        ),
+      ],
+    );
   }
 }

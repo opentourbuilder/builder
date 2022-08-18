@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:builder/utils/evresi_page_route.dart';
+import 'package:builder/views/editor/tour.dart';
 import 'package:flutter/material.dart';
 
 import 'editor/home.dart';
+import '../db/db.dart';
 
 class EditorPage extends StatelessWidget {
   EditorPage({Key? key}) : super(key: key);
@@ -29,10 +33,42 @@ class EditorPage extends StatelessWidget {
   }
 }
 
-class Sidebar extends StatelessWidget {
+class Sidebar extends StatefulWidget {
   const Sidebar({Key? key, required this.navKey}) : super(key: key);
 
   final GlobalKey<NavigatorState> navKey;
+
+  @override
+  State<StatefulWidget> createState() => _SidebarState();
+}
+
+class _SidebarState extends State<Sidebar> {
+  StreamSubscription<Event>? _eventsSubscription;
+  List<Item> _tours = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // subscribe to events from the db and request the list of tours
+    _eventsSubscription = db.events.listen(_onEvent);
+    db.requestEvent(const ToursEventDescriptor());
+  }
+
+  @override
+  void dispose() {
+    _eventsSubscription?.cancel();
+
+    super.dispose();
+  }
+
+  void _onEvent(Event event) {
+    if (event.desc is ToursEventDescriptor) {
+      setState(() {
+        _tours = event.value;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,23 +82,26 @@ class Sidebar extends StatelessWidget {
               _SidebarItem(
                 "Home",
                 leading: const Icon(Icons.home),
-                onTap: () => navKey.currentState?.push(
+                onTap: () => widget.navKey.currentState?.push(
                   EvresiPageRoute((context) => const Home()),
                 ),
               ),
               const _SidebarHeader("Tours"),
-              /*for (var entry in db.tours)
+              for (var item in _tours)
                 _SidebarItem(
+                  item.name!,
+                  key: ValueKey(item.id),
                   leading: const Icon(Icons.map),
-                  title: entry.value.name,
-                  onTap: () => navKey.currentState?.push(
-                    EvresiPageRoute(
-                        (context) => TourScreen(tourId: entry.key)),
-                ),*/
+                  onTap: () => widget.navKey.currentState?.push(
+                    EvresiPageRoute((context) => TourScreen(tourId: item.id)),
+                  ),
+                ),
               _SidebarItem(
                 "New Tour",
                 leading: const Icon(Icons.add),
-                onTap: () {},
+                onTap: () {
+                  db.createTour(Tour(name: "New tour", desc: ""));
+                },
               ),
               const Expanded(
                 child: _SidebarControls(),
@@ -163,9 +202,10 @@ class _SidebarHeader extends StatelessWidget {
 class _SidebarItem extends StatelessWidget {
   const _SidebarItem(
     this.title, {
+    Key? key,
     required this.leading,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   final Widget leading;
   final String title;
