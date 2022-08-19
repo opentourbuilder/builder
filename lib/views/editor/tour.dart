@@ -37,26 +37,13 @@ class _TourScreenState extends State<TourScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: TextEditingController(text: tour.name),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      labelText: "Title",
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-                ElevatedButton(
-                  onPressed: () {},
-                  child: const Text("Save"),
-                ),
-              ],
+            child: TextField(
+              controller: TextEditingController(text: tour.name),
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                isDense: true,
+                labelText: "Title",
+              ),
             ),
           ),
           const Divider(
