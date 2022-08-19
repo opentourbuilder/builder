@@ -15,19 +15,17 @@ class EditorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Row(
-          children: [
-            Sidebar(navKey: navKey),
-            Expanded(
-              child: Navigator(
-                key: navKey,
-                onGenerateInitialRoutes: (navigator, initialRoute) =>
-                    [EvresiPageRoute((context) => const Home())],
-              ),
+      body: Row(
+        children: [
+          Sidebar(navKey: navKey),
+          Expanded(
+            child: Navigator(
+              key: navKey,
+              onGenerateInitialRoutes: (navigator, initialRoute) =>
+                  [EvresiPageRoute((context) => const Home())],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
