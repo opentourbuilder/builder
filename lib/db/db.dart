@@ -351,6 +351,7 @@ abstract class EventDescriptor<T> {
 class ToursEventDescriptor extends EventDescriptor<List<Item>> {
   const ToursEventDescriptor();
 
+  @override
   Future<List<Item>> _observe(EvresiDatabase db) async {
     var rows = await db._db.query(
       _symTour,
@@ -367,6 +368,7 @@ class WaypointsEventDescriptor extends EventDescriptor<List<Item>> {
 
   final Uuid tourId;
 
+  @override
   Future<List<Item>> _observe(EvresiDatabase db) async {
     var rows = await db._db.query(
       _symWaypoint,
@@ -383,6 +385,7 @@ class WaypointsEventDescriptor extends EventDescriptor<List<Item>> {
 class PoisEventDescriptor extends EventDescriptor<List<Item>> {
   const PoisEventDescriptor();
 
+  @override
   Future<List<Item>> _observe(EvresiDatabase db) async {
     var rows = await db._db.query(
       _symPoi,
