@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 
 import '../../db/db.dart';
 
-class TourScreen extends StatefulWidget {
-  const TourScreen({Key? key, required this.tourId}) : super(key: key);
+class TourEditor extends StatefulWidget {
+  const TourEditor({Key? key, required this.tourId}) : super(key: key);
 
   final Uuid tourId;
 
   @override
-  State<TourScreen> createState() => _TourScreenState();
+  State<TourEditor> createState() => _TourEditorState();
 }
 
-class _TourScreenState extends State<TourScreen> {
+class _TourEditorState extends State<TourEditor> {
   Timer? _saveTimer;
   Tour? _tour;
   bool _tourLoaded = false;

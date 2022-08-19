@@ -93,7 +93,7 @@ class _SidebarState extends State<Sidebar> {
                   key: ValueKey(item.id),
                   leading: const Icon(Icons.map),
                   onTap: () => widget.navKey.currentState?.push(
-                    EvresiPageRoute((context) => TourScreen(tourId: item.id)),
+                    EvresiPageRoute((context) => TourEditor(tourId: item.id)),
                   ),
                 ),
               _SidebarItem(
