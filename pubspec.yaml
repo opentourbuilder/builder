@@ -29,6 +29,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  latlong2: ^0.8.1
+  flutter_map: ^2.2.0
   google_fonts: ">=3.0.0"
   sqflite_common: ">=2.0.0"
   sqflite_common_ffi: ">=2.0.0"
