@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../db/db.dart';
@@ -12,6 +14,7 @@ class TourScreen extends StatefulWidget {
 }
 
 class _TourScreenState extends State<TourScreen> {
+  Timer? _saveTimer;
   Tour? _tour;
   bool _tourLoaded = false;
 
@@ -39,6 +42,10 @@ class _TourScreenState extends State<TourScreen> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: TextEditingController(text: tour.name),
+              onChanged: (value) {
+                tour.name = value;
+                _updateSaveTimer();
+              },
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 isDense: true,
@@ -64,5 +71,12 @@ class _TourScreenState extends State<TourScreen> {
         ),
       ],
     );
+  }
+
+  void _updateSaveTimer() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 500), () {
+      db.updateTour(widget.tourId, _tour!);
+    });
   }
 }
