@@ -361,6 +361,12 @@ class ToursEventDescriptor extends EventDescriptor<List<Item>> {
 
     return rows.map(Item._fromRow).toList();
   }
+
+  @override
+  bool operator ==(Object other) => other is ToursEventDescriptor;
+
+  @override
+  int get hashCode => runtimeType.hashCode + 1;
 }
 
 class WaypointsEventDescriptor extends EventDescriptor<List<Item>> {
@@ -380,6 +386,13 @@ class WaypointsEventDescriptor extends EventDescriptor<List<Item>> {
 
     return rows.map(Item._fromRow).toList();
   }
+
+  @override
+  bool operator ==(Object other) =>
+      other is WaypointsEventDescriptor && tourId == other.tourId;
+
+  @override
+  int get hashCode => tourId.hashCode;
 }
 
 class PoisEventDescriptor extends EventDescriptor<List<Item>> {
@@ -395,6 +408,12 @@ class PoisEventDescriptor extends EventDescriptor<List<Item>> {
 
     return rows.map(Item._fromRow).toList();
   }
+
+  @override
+  bool operator ==(Object other) => other is PoisEventDescriptor;
+
+  @override
+  int get hashCode => runtimeType.hashCode + 1;
 }
 
 class Poi {
