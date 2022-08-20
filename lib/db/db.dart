@@ -117,7 +117,7 @@ class EvresiDatabase {
     Waypoint waypoint,
   ) async {
     await _db.update(
-      _symPoi,
+      _symWaypoint,
       {
         ...waypoint._toRow(),
         _symRevision: _currentRevision.bytes,
@@ -133,7 +133,7 @@ class EvresiDatabase {
     var id = Uuid.v4();
 
     // insert it with invalid order
-    await _db.insert(_symPoi, {
+    await _db.insert(_symWaypoint, {
       _symId: id.bytes,
       _symTour: tourId.bytes,
       _symOrder: null,
