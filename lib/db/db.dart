@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart' as uuid_lib;
@@ -469,10 +471,11 @@ class Uuid {
   final Uint8List bytes;
 
   @override
-  bool operator ==(Object other) => other is Uuid && bytes == other.bytes;
+  bool operator ==(Object other) =>
+      other is Uuid && listEquals(bytes, other.bytes);
 
   @override
-  int get hashCode => bytes.hashCode;
+  int get hashCode => hashList(bytes);
 
   String toHex() {
     String bitsToHexDigit(int bits) {
