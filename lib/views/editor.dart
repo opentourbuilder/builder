@@ -151,6 +151,9 @@ class _SidebarControls extends StatelessWidget {
                     backgroundColor: MaterialStateProperty.all(
                       Theme.of(context).colorScheme.secondary,
                     ),
+                    foregroundColor: MaterialStateProperty.all(
+                      Theme.of(context).colorScheme.onSecondary,
+                    ),
                   ),
                   onPressed: () {},
                   child: const Padding(
