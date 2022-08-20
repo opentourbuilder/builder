@@ -125,7 +125,7 @@ class EvresiDatabase {
         _symRevision: _currentRevision.bytes,
       },
       where: "$_symTour = ? AND $_symId = ?",
-      whereArgs: [waypointId.bytes, tourId.bytes],
+      whereArgs: [tourId.bytes, waypointId.bytes],
     );
 
     requestEvent(WaypointsEventDescriptor(tourId: tourId));
