@@ -29,6 +29,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  intl: any
   latlong2: ^0.8.1
   flutter_map: ^2.2.0
   google_fonts: ">=3.0.0"

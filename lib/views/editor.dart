@@ -42,7 +42,7 @@ class Sidebar extends StatefulWidget {
 
 class _SidebarState extends State<Sidebar> {
   StreamSubscription<Event>? _eventsSubscription;
-  List<Item> _tours = [];
+  List<TourSummary> _tours = [];
 
   @override
   void initState() {
@@ -87,7 +87,7 @@ class _SidebarState extends State<Sidebar> {
               const _SidebarHeader("Tours"),
               for (var item in _tours)
                 _SidebarItem(
-                  item.name!,
+                  item.name,
                   key: ValueKey(item.id),
                   leading: const Icon(Icons.map),
                   onTap: () => widget.navKey.currentState?.push(

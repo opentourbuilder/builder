@@ -334,90 +334,6 @@ class Waypoint {
   String? narrationPath;
 }
 
-class Event<D extends EventDescriptor<T>, T> {
-  Event._({
-    required this.desc,
-    required this.value,
-  });
-
-  final D desc;
-  final T value;
-}
-
-abstract class EventDescriptor<T> {
-  const EventDescriptor();
-
-  Future<T> _observe(EvresiDatabase db);
-}
-
-class ToursEventDescriptor extends EventDescriptor<List<Item>> {
-  const ToursEventDescriptor();
-
-  @override
-  Future<List<Item>> _observe(EvresiDatabase db) async {
-    var rows = await db._db.query(
-      _symTour,
-      columns: [_symId, _symName],
-      orderBy: _symName,
-    );
-
-    return rows.map(Item._fromRow).toList();
-  }
-
-  @override
-  bool operator ==(Object other) => other is ToursEventDescriptor;
-
-  @override
-  int get hashCode => runtimeType.hashCode + 1;
-}
-
-class WaypointsEventDescriptor extends EventDescriptor<List<Item>> {
-  const WaypointsEventDescriptor({required this.tourId});
-
-  final Uuid tourId;
-
-  @override
-  Future<List<Item>> _observe(EvresiDatabase db) async {
-    var rows = await db._db.query(
-      _symWaypoint,
-      columns: [_symId, _symName],
-      where: "$_symTour = ?",
-      whereArgs: [tourId.bytes],
-      orderBy: _symName,
-    );
-
-    return rows.map(Item._fromRow).toList();
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      other is WaypointsEventDescriptor && tourId == other.tourId;
-
-  @override
-  int get hashCode => tourId.hashCode;
-}
-
-class PoisEventDescriptor extends EventDescriptor<List<Item>> {
-  const PoisEventDescriptor();
-
-  @override
-  Future<List<Item>> _observe(EvresiDatabase db) async {
-    var rows = await db._db.query(
-      _symPoi,
-      columns: [_symId, _symName],
-      orderBy: _symName,
-    );
-
-    return rows.map(Item._fromRow).toList();
-  }
-
-  @override
-  bool operator ==(Object other) => other is PoisEventDescriptor;
-
-  @override
-  int get hashCode => runtimeType.hashCode + 1;
-}
-
 class Poi {
   Poi({
     required this.name,
@@ -445,18 +361,122 @@ class Poi {
   double lng;
 }
 
-/// A short summary of an item.
-class Item {
-  const Item({
+class Event<D extends EventDescriptor<T>, T> {
+  Event._({
+    required this.desc,
+    required this.value,
+  });
+
+  final D desc;
+  final T value;
+}
+
+abstract class EventDescriptor<T> {
+  const EventDescriptor();
+
+  Future<T> _observe(EvresiDatabase db);
+}
+
+class ToursEventDescriptor extends EventDescriptor<List<TourSummary>> {
+  const ToursEventDescriptor();
+
+  @override
+  Future<List<TourSummary>> _observe(EvresiDatabase db) async {
+    var rows = await db._db.query(
+      _symTour,
+      columns: [_symId, _symName],
+      orderBy: _symName,
+    );
+
+    return rows.map(TourSummary._fromRow).toList();
+  }
+
+  @override
+  bool operator ==(Object other) => other is ToursEventDescriptor;
+
+  @override
+  int get hashCode => runtimeType.hashCode + 1;
+}
+
+class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
+  const WaypointsEventDescriptor({required this.tourId});
+
+  final Uuid tourId;
+
+  @override
+  Future<List<PointSummary>> _observe(EvresiDatabase db) async {
+    var rows = await db._db.query(
+      _symWaypoint,
+      columns: [_symId, _symOrder, _symLat, _symLng, _symName],
+      where: "$_symTour = ?",
+      whereArgs: [tourId.bytes],
+      orderBy: _symOrder,
+    );
+
+    return rows.map(PointSummary._fromRow).toList();
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is WaypointsEventDescriptor && tourId == other.tourId;
+
+  @override
+  int get hashCode => tourId.hashCode;
+}
+
+class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
+  const PoisEventDescriptor();
+
+  @override
+  Future<List<PointSummary>> _observe(EvresiDatabase db) async {
+    var rows = await db._db.query(
+      _symPoi,
+      columns: [_symId, _symLat, _symLng, _symName],
+      orderBy: _symName,
+    );
+
+    return rows.map(PointSummary._fromRow).toList();
+  }
+
+  @override
+  bool operator ==(Object other) => other is PoisEventDescriptor;
+
+  @override
+  int get hashCode => runtimeType.hashCode + 1;
+}
+
+/// A short summary of a tour.
+class TourSummary {
+  const TourSummary({
     required this.id,
     required this.name,
   });
 
-  Item._fromRow(Map<String, Object?> row)
+  TourSummary._fromRow(Map<String, Object?> row)
       : id = Uuid(row[_symId]! as Uint8List),
+        name = row[_symName]! as String;
+
+  final Uuid id;
+  final String name;
+}
+
+class PointSummary {
+  const PointSummary({
+    required this.id,
+    required this.lat,
+    required this.lng,
+    required this.name,
+  });
+
+  PointSummary._fromRow(Map<String, Object?> row)
+      : id = Uuid(row[_symId]! as Uint8List),
+        lat = row[_symLat]! as double,
+        lng = row[_symLng]! as double,
         name = row[_symName] as String?;
 
   final Uuid id;
+  final double lat;
+  final double lng;
   final String? name;
 }
 
