@@ -4,8 +4,8 @@ import 'package:builder/utils/evresi_page_route.dart';
 import 'package:builder/views/editor/tour.dart';
 import 'package:flutter/material.dart';
 
+import '/db/db.dart';
 import 'editor/home.dart';
-import '../db/db.dart';
 
 class EditorPage extends StatelessWidget {
   EditorPage({Key? key}) : super(key: key);
