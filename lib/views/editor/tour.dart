@@ -58,78 +58,64 @@ class _TourEditorState extends State<TourEditor>
 
     var inputsEnabled = _tour != null && _tourLoaded;
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 500,
-            child: DefaultTabController(
-              length: 2,
-              child: Column(
-                children: [
-                  TextField(
-                    enabled: inputsEnabled,
-                    controller: inputsEnabled
-                        ? TextEditingController(text: _tour!.name)
-                        : null,
-                    onChanged: inputsEnabled
-                        ? (value) {
-                            _tour!.name = value;
-                            _updateSaveTimer();
-                          }
-                        : null,
-                    decoration: inputDecoration.copyWith(labelText: "Title"),
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextField(
-                    minLines: 8,
-                    maxLines: 8,
-                    enabled: inputsEnabled,
-                    controller: inputsEnabled
-                        ? TextEditingController(text: _tour!.desc)
-                        : null,
-                    onChanged: inputsEnabled
-                        ? (value) {
-                            _tour!.desc = value;
-                            _updateSaveTimer();
-                          }
-                        : null,
-                    decoration:
-                        inputDecoration.copyWith(labelText: "Description"),
-                  ),
-                  TabBar(
-                    labelColor: Colors.black,
-                    indicatorColor: Theme.of(context).colorScheme.primary,
-                    tabs: const [
-                      Tab(child: Text("Route")),
-                      Tab(child: Text("POIs")),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(children: [
-                      WaypointsEditor(
-                        tourId: widget.tourId,
-                        waypoints: waypoints,
-                      ),
-                      const Text("Bbbbbbbbbbbbbbbbbb"),
-                    ]),
-                  ),
+    return LayoutBuilder(builder: (context, constraints) {
+      final contentEditor = _TourContentEditor(
+        tourId: widget.tourId,
+        tour: _tour,
+        waypoints: waypoints,
+        onTourNameChanged: (value) {
+          setState(() => _tour?.name = value);
+          _updateSaveTimer();
+        },
+        onTourDescChanged: (value) {
+          setState(() => _tour?.desc = value);
+          _updateSaveTimer();
+        },
+      );
+
+      final map = TourMap(
+        waypoints: waypoints,
+        tourId: widget.tourId,
+      );
+
+      if (constraints.maxWidth >= 800) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            contentEditor,
+            const VerticalDivider(
+              width: 1.0,
+              thickness: 1.0,
+            ),
+            Expanded(child: map),
+          ],
+        );
+      } else {
+        return DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              TabBar(
+                labelColor: Colors.black,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+                tabs: const [
+                  Tab(child: Text("Content")),
+                  Tab(child: Text("Map")),
                 ],
               ),
-            ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    contentEditor,
+                    map,
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16.0),
-          Expanded(
-            child: TourMap(
-              waypoints: waypoints,
-              tourId: widget.tourId,
-            ),
-          ),
-        ],
-      ),
-    );
+        );
+      }
+    });
   }
 
   void _updateSaveTimer() {
@@ -145,5 +131,77 @@ class _TourEditorState extends State<TourEditor>
         waypoints = event.value;
       });
     }
+  }
+}
+
+class _TourContentEditor extends StatelessWidget {
+  const _TourContentEditor({
+    required this.tourId,
+    required this.tour,
+    required this.waypoints,
+    required this.onTourDescChanged,
+    required this.onTourNameChanged,
+  });
+
+  final Uuid tourId;
+  final Tour? tour;
+  final List<PointSummary> waypoints;
+  final void Function(String) onTourNameChanged;
+  final void Function(String) onTourDescChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const inputDecoration = InputDecoration(
+      border: OutlineInputBorder(),
+      floatingLabelBehavior: FloatingLabelBehavior.always,
+      floatingLabelAlignment: FloatingLabelAlignment.start,
+      isDense: true,
+    );
+
+    return DefaultTabController(
+      length: 2,
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: Column(
+          children: [
+            TextField(
+              enabled: tour != null,
+              controller:
+                  tour != null ? TextEditingController(text: tour!.name) : null,
+              onChanged: tour != null ? onTourNameChanged : null,
+              decoration: inputDecoration.copyWith(labelText: "Title"),
+            ),
+            const SizedBox(height: 16.0),
+            TextField(
+              minLines: 8,
+              maxLines: 8,
+              enabled: tour != null,
+              controller:
+                  tour != null ? TextEditingController(text: tour!.desc) : null,
+              onChanged: tour != null ? onTourDescChanged : null,
+              decoration: inputDecoration.copyWith(labelText: "Description"),
+            ),
+            TabBar(
+              labelColor: Colors.black,
+              indicatorColor: Theme.of(context).colorScheme.primary,
+              tabs: const [
+                Tab(child: Text("Route")),
+                Tab(child: Text("POIs")),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(children: [
+                WaypointsEditor(
+                  tourId: tourId,
+                  waypoints: waypoints,
+                ),
+                const Text("Bbbbbbbbbbbbbbbbbb"),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
