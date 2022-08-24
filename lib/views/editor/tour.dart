@@ -15,8 +15,7 @@ class TourEditor extends StatefulWidget {
   State<TourEditor> createState() => _TourEditorState();
 }
 
-class _TourEditorState extends State<TourEditor>
-    with SingleTickerProviderStateMixin<TourEditor> {
+class _TourEditorState extends State<TourEditor> {
   Timer? _saveTimer;
   Tour? _tour;
   bool _tourLoaded = false;
