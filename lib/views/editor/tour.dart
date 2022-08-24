@@ -51,15 +51,6 @@ class _TourEditorState extends State<TourEditor> {
       throw Exception("Error: loaded tour is null");
     }
 
-    const inputDecoration = InputDecoration(
-      border: OutlineInputBorder(),
-      floatingLabelBehavior: FloatingLabelBehavior.always,
-      floatingLabelAlignment: FloatingLabelAlignment.start,
-      isDense: true,
-    );
-
-    var inputsEnabled = _tour != null && _tourLoaded;
-
     return LayoutBuilder(builder: (context, constraints) {
       final contentEditor = _TourContentEditor(
         key: _contentEditorKey,
