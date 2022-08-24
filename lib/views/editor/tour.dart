@@ -157,26 +157,35 @@ class _TourContentEditor extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Container(
-        padding: const EdgeInsets.all(16.0),
         constraints: const BoxConstraints(maxWidth: 500),
         child: Column(
           children: [
-            TextField(
-              enabled: tour != null,
-              controller:
-                  tour != null ? TextEditingController(text: tour!.name) : null,
-              onChanged: tour != null ? onTourNameChanged : null,
-              decoration: inputDecoration.copyWith(labelText: "Title"),
-            ),
-            const SizedBox(height: 16.0),
-            TextField(
-              minLines: 8,
-              maxLines: 8,
-              enabled: tour != null,
-              controller:
-                  tour != null ? TextEditingController(text: tour!.desc) : null,
-              onChanged: tour != null ? onTourDescChanged : null,
-              decoration: inputDecoration.copyWith(labelText: "Description"),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  TextField(
+                    enabled: tour != null,
+                    controller: tour != null
+                        ? TextEditingController(text: tour!.name)
+                        : null,
+                    onChanged: tour != null ? onTourNameChanged : null,
+                    decoration: inputDecoration.copyWith(labelText: "Title"),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextField(
+                    minLines: 8,
+                    maxLines: 8,
+                    enabled: tour != null,
+                    controller: tour != null
+                        ? TextEditingController(text: tour!.desc)
+                        : null,
+                    onChanged: tour != null ? onTourDescChanged : null,
+                    decoration:
+                        inputDecoration.copyWith(labelText: "Description"),
+                  ),
+                ],
+              ),
             ),
             TabBar(
               labelColor: Colors.black,

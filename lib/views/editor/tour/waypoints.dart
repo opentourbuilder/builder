@@ -19,37 +19,46 @@ class WaypointsEditor extends StatefulWidget {
 }
 
 class _WaypointsEditorState extends State<WaypointsEditor> {
+  Uuid? selectedWaypoint;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            db.createWaypoint(
-              widget.tourId,
-              Waypoint(
-                name: "New waypoint",
-                desc: "",
-                lat: 0,
-                lng: 0,
-                narrationPath: null,
-              ),
-            );
-          },
-          child: const Text("Create Waypoint"),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: widget.waypoints.length,
-            itemBuilder: (context, index) {
+        ListView.builder(
+          padding: const EdgeInsets.all(8.0),
+          itemCount: widget.waypoints.length + 1,
+          itemBuilder: (context, index) {
+            if (index < widget.waypoints.length) {
               return _WaypointSummary(
+                key: ValueKey(widget.waypoints[index].id),
                 index: index,
+                onTap: () {
+                  setState(() => selectedWaypoint = widget.waypoints[index].id);
+                },
                 data: widget.waypoints[index],
               );
-            },
-          ),
+            } else {
+              return ElevatedButton(
+                onPressed: () {
+                  db.createWaypoint(
+                    widget.tourId,
+                    Waypoint(
+                      name: "New waypoint",
+                      desc: "",
+                      lat: 0,
+                      lng: 0,
+                      narrationPath: null,
+                    ),
+                  );
+                },
+                child: const Text("Create Waypoint"),
+              );
+            }
+          },
         ),
+        if (selectedWaypoint != null)
+          Text("selected ${selectedWaypoint?.bytes}"),
       ],
     );
   }
@@ -60,10 +69,12 @@ class _WaypointSummary extends StatefulWidget {
     Key? key,
     required this.index,
     required this.data,
+    required this.onTap,
   }) : super(key: key);
 
   final int index;
   final PointSummary data;
+  final void Function() onTap;
 
   @override
   State<_WaypointSummary> createState() => _WaypointSummaryState();
@@ -78,7 +89,11 @@ class _WaypointSummaryState extends State<_WaypointSummary> {
         borderRadius: BorderRadius.circular(16.0),
       ),
       child: InkWell(
-        onTap: () {},
+        focusColor: const Color(0x10000088),
+        highlightColor: const Color(0x08000088),
+        hoverColor: const Color(0x08000088),
+        splashColor: const Color(0x08000088),
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(16.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
