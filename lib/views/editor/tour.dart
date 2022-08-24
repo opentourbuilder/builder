@@ -23,6 +23,9 @@ class _TourEditorState extends State<TourEditor>
   List<PointSummary> waypoints = [];
   StreamSubscription<Event>? _eventsSubscription;
 
+  final _contentEditorKey = GlobalKey();
+  final _mapKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +63,7 @@ class _TourEditorState extends State<TourEditor>
 
     return LayoutBuilder(builder: (context, constraints) {
       final contentEditor = _TourContentEditor(
+        key: _contentEditorKey,
         tourId: widget.tourId,
         tour: _tour,
         waypoints: waypoints,
@@ -74,6 +78,7 @@ class _TourEditorState extends State<TourEditor>
       );
 
       final map = TourMap(
+        key: _mapKey,
         waypoints: waypoints,
         tourId: widget.tourId,
       );
@@ -136,12 +141,13 @@ class _TourEditorState extends State<TourEditor>
 
 class _TourContentEditor extends StatelessWidget {
   const _TourContentEditor({
+    Key? key,
     required this.tourId,
     required this.tour,
     required this.waypoints,
     required this.onTourDescChanged,
     required this.onTourNameChanged,
-  });
+  }) : super(key: key);
 
   final Uuid tourId;
   final Tour? tour;

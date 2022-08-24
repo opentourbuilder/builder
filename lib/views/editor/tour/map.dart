@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '/db/db.dart';
 
-class TourMap extends StatelessWidget {
+class TourMap extends StatefulWidget {
   const TourMap({
     Key? key,
     required this.waypoints,
@@ -15,14 +15,22 @@ class TourMap extends StatelessWidget {
   final Uuid tourId;
 
   @override
+  State<TourMap> createState() => _TourMapState();
+}
+
+class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
     return FlutterMap(
       options: MapOptions(
         onTap: (tapPosition, point) {
-          db.loadWaypoint(waypoints[0].id).then((value) {
+          db.loadWaypoint(widget.waypoints[0].id).then((value) {
             value!.lat = point.latitude;
             value.lng = point.longitude;
-            db.updateWaypoint(tourId, waypoints[0].id, value);
+            db.updateWaypoint(widget.tourId, widget.waypoints[0].id, value);
           });
         },
         center: LatLng(37.09024, -95.712891),
@@ -36,7 +44,7 @@ class TourMap extends StatelessWidget {
         ),
         MarkerLayerOptions(
           markers: [
-            for (var waypoint in waypoints)
+            for (var waypoint in widget.waypoints)
               Marker(
                 point: LatLng(waypoint.lat, waypoint.lng),
                 width: 20,
