@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '/db/db.dart';
+import '/models/editor/tour.dart';
 import 'tour/map.dart';
 import 'tour/waypoint_editor.dart';
 import 'tour/waypoint_list.dart';
@@ -52,8 +54,9 @@ class _TourEditorState extends State<TourEditor> {
         tourId: widget.tourId,
       );
 
+      Widget child;
       if (constraints.maxWidth >= 800) {
-        return Row(
+        child = Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             contentEditor,
@@ -65,7 +68,7 @@ class _TourEditorState extends State<TourEditor> {
           ],
         );
       } else {
-        return DefaultTabController(
+        child = DefaultTabController(
           length: 2,
           child: Column(
             children: [
@@ -89,6 +92,11 @@ class _TourEditorState extends State<TourEditor> {
           ),
         );
       }
+
+      return ChangeNotifierProvider(
+        create: (_) => TourEditorModel(),
+        child: child,
+      );
     });
   }
 
@@ -145,6 +153,8 @@ class _TourContentEditorState extends State<_TourContentEditor> {
       floatingLabelAlignment: FloatingLabelAlignment.start,
       isDense: true,
     );
+
+    var model = context.watch<TourEditorModel>();
 
     return DefaultTabController(
       length: 2,
@@ -204,9 +214,8 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                     WaypointList(
                       tourId: widget.tourId,
                       waypoints: widget.waypoints,
-                      onWaypointTap: (waypoint) {},
                     ),
-                    const WaypointEditor(),
+                    if (model.selectedWaypoint != null) const WaypointEditor(),
                   ],
                 ),
                 const Text("This is where the POI editor goes."),

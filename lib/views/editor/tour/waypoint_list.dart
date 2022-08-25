@@ -1,6 +1,8 @@
+import 'package:builder/models/editor/tour.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '/db/db.dart';
 
@@ -9,12 +11,10 @@ class WaypointList extends StatelessWidget {
     Key? key,
     required this.tourId,
     required this.waypoints,
-    required this.onWaypointTap,
   }) : super(key: key);
 
   final Uuid tourId;
   final List<PointSummary> waypoints;
-  final void Function(Uuid) onWaypointTap;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,9 @@ class WaypointList extends StatelessWidget {
           return _WaypointSummary(
             key: ValueKey(waypoints[index].id),
             index: index,
-            onTap: () => onWaypointTap(waypoints[index].id),
+            onTap: () => context
+                .read<TourEditorModel>()
+                .selectWaypoint(waypoints[index].id),
             data: waypoints[index],
           );
         } else {

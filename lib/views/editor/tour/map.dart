@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
 import '/db/db.dart';
+import '/models/editor/tour.dart';
 
 class TourMap extends StatefulWidget {
   const TourMap({
@@ -26,14 +28,19 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   Widget build(BuildContext context) {
     super.build(context);
 
+    var tourEditorModel = context.watch<TourEditorModel>();
+
     return FlutterMap(
       options: MapOptions(
         onTap: (tapPosition, point) {
-          db.loadWaypoint(widget.waypoints[0].id).then((value) {
-            value!.lat = point.latitude;
-            value.lng = point.longitude;
-            db.updateWaypoint(widget.tourId, widget.waypoints[0].id, value);
-          });
+          var selectedWaypoint = tourEditorModel.selectedWaypoint;
+          if (selectedWaypoint != null) {
+            db.loadWaypoint(selectedWaypoint).then((value) {
+              value!.lat = point.latitude;
+              value.lng = point.longitude;
+              db.updateWaypoint(widget.tourId, selectedWaypoint, value);
+            });
+          }
         },
         center: LatLng(37.09024, -95.712891),
         zoom: 4,
