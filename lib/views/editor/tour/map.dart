@@ -24,6 +24,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     return FlutterMap(
       options: MapOptions(
         onTap: (tapPosition, point) {
