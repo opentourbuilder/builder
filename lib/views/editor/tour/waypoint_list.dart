@@ -4,62 +4,49 @@ import 'package:intl/intl.dart';
 
 import '/db/db.dart';
 
-class WaypointList extends StatefulWidget {
+class WaypointList extends StatelessWidget {
   const WaypointList({
     Key? key,
     required this.tourId,
     required this.waypoints,
+    required this.onWaypointTap,
   }) : super(key: key);
 
   final Uuid tourId;
   final List<PointSummary> waypoints;
-
-  @override
-  State<StatefulWidget> createState() => _WaypointListState();
-}
-
-class _WaypointListState extends State<WaypointList> {
-  Uuid? selectedWaypoint;
+  final void Function(Uuid) onWaypointTap;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ListView.builder(
-          padding: const EdgeInsets.all(8.0),
-          itemCount: widget.waypoints.length + 1,
-          itemBuilder: (context, index) {
-            if (index < widget.waypoints.length) {
-              return _WaypointSummary(
-                key: ValueKey(widget.waypoints[index].id),
-                index: index,
-                onTap: () {
-                  setState(() => selectedWaypoint = widget.waypoints[index].id);
-                },
-                data: widget.waypoints[index],
+    return ListView.builder(
+      padding: const EdgeInsets.all(8.0),
+      itemCount: waypoints.length + 1,
+      itemBuilder: (context, index) {
+        if (index < waypoints.length) {
+          return _WaypointSummary(
+            key: ValueKey(waypoints[index].id),
+            index: index,
+            onTap: () => onWaypointTap(waypoints[index].id),
+            data: waypoints[index],
+          );
+        } else {
+          return ElevatedButton(
+            onPressed: () {
+              db.createWaypoint(
+                tourId,
+                Waypoint(
+                  name: "New waypoint",
+                  desc: "",
+                  lat: 0,
+                  lng: 0,
+                  narrationPath: null,
+                ),
               );
-            } else {
-              return ElevatedButton(
-                onPressed: () {
-                  db.createWaypoint(
-                    widget.tourId,
-                    Waypoint(
-                      name: "New waypoint",
-                      desc: "",
-                      lat: 0,
-                      lng: 0,
-                      narrationPath: null,
-                    ),
-                  );
-                },
-                child: const Text("Create Waypoint"),
-              );
-            }
-          },
-        ),
-        if (selectedWaypoint != null)
-          Text("selected ${selectedWaypoint?.bytes}"),
-      ],
+            },
+            child: const Text("Create Waypoint"),
+          );
+        }
+      },
     );
   }
 }

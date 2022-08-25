@@ -200,8 +200,9 @@ class _TourContentEditor extends StatelessWidget {
                 WaypointList(
                   tourId: tourId,
                   waypoints: waypoints,
+                  onWaypointTap: (waypoint) {},
                 ),
-                const Text("Bbbbbbbbbbbbbbbbbb"),
+                const Text("This is where the POI editor goes."),
               ]),
             ),
           ],
