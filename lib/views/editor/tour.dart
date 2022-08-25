@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '/db/db.dart';
 import 'tour/map.dart';
-import 'tour/waypoints.dart';
+import 'tour/waypoint_list.dart';
 
 class TourEditor extends StatefulWidget {
   const TourEditor({Key? key, required this.tourId}) : super(key: key);
@@ -197,7 +197,7 @@ class _TourContentEditor extends StatelessWidget {
             ),
             Expanded(
               child: TabBarView(children: [
-                WaypointsEditor(
+                WaypointList(
                   tourId: tourId,
                   waypoints: waypoints,
                 ),

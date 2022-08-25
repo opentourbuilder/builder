@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 
 import '/db/db.dart';
 
-class WaypointsEditor extends StatefulWidget {
-  const WaypointsEditor({
+class WaypointList extends StatefulWidget {
+  const WaypointList({
     Key? key,
     required this.tourId,
     required this.waypoints,
@@ -15,10 +15,10 @@ class WaypointsEditor extends StatefulWidget {
   final List<PointSummary> waypoints;
 
   @override
-  State<StatefulWidget> createState() => _WaypointsEditorState();
+  State<StatefulWidget> createState() => _WaypointListState();
 }
 
-class _WaypointsEditorState extends State<WaypointsEditor> {
+class _WaypointListState extends State<WaypointList> {
   Uuid? selectedWaypoint;
 
   @override
