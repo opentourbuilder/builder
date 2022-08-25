@@ -7,9 +7,14 @@ import 'package:flutter/material.dart';
 import '/db/db.dart';
 import 'editor/home.dart';
 
-class EditorPage extends StatelessWidget {
-  EditorPage({Key? key}) : super(key: key);
+class EditorPage extends StatefulWidget {
+  const EditorPage({Key? key}) : super(key: key);
 
+  @override
+  State<EditorPage> createState() => _EditorPageState();
+}
+
+class _EditorPageState extends State<EditorPage> {
   final GlobalKey<NavigatorState> navKey = GlobalKey();
 
   @override
