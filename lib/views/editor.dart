@@ -141,12 +141,7 @@ class _SidebarControls extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {},
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 12.0,
-                    ),
-                    child: Text("PUBLISH"),
-                  ),
+                  child: const Text("PUBLISH"),
                 ),
               ),
               const SizedBox(width: 8.0),
@@ -161,12 +156,7 @@ class _SidebarControls extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {},
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 12.0,
-                    ),
-                    child: Text("SYNC"),
-                  ),
+                  child: const Text("SYNC"),
                 ),
               ),
               const SizedBox(width: 8.0),
