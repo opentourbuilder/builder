@@ -30,20 +30,23 @@ class WaypointList extends StatelessWidget {
             data: waypoints[index],
           );
         } else {
-          return ElevatedButton(
-            onPressed: () {
-              db.createWaypoint(
-                tourId,
-                Waypoint(
-                  name: "New waypoint",
-                  desc: "",
-                  lat: 0,
-                  lng: 0,
-                  narrationPath: null,
-                ),
-              );
-            },
-            child: const Text("Create Waypoint"),
+          return Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: ElevatedButton(
+              onPressed: () {
+                db.createWaypoint(
+                  tourId,
+                  Waypoint(
+                    name: "New waypoint",
+                    desc: "",
+                    lat: 0,
+                    lng: 0,
+                    narrationPath: null,
+                  ),
+                );
+              },
+              child: const Text("Create Waypoint"),
+            ),
           );
         }
       },
