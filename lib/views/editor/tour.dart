@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '/db/db.dart';
 import 'tour/map.dart';
+import 'tour/waypoint_editor.dart';
 import 'tour/waypoint_list.dart';
 
 class TourEditor extends StatefulWidget {
@@ -16,24 +17,16 @@ class TourEditor extends StatefulWidget {
 }
 
 class _TourEditorState extends State<TourEditor> {
-  Timer? _saveTimer;
-  Tour? _tour;
-  bool _tourLoaded = false;
-  List<PointSummary> waypoints = [];
-  StreamSubscription<Event>? _eventsSubscription;
-
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
+
+  StreamSubscription<Event>? _eventsSubscription;
+
+  List<PointSummary> waypoints = [];
 
   @override
   void initState() {
     super.initState();
-    db.loadTour(widget.tourId).then((tour) {
-      setState(() {
-        _tour = tour;
-        _tourLoaded = true;
-      });
-    });
     _eventsSubscription = db.events.listen(_onEvent);
     db.requestEvent(WaypointsEventDescriptor(tourId: widget.tourId));
   }
@@ -46,25 +39,11 @@ class _TourEditorState extends State<TourEditor> {
 
   @override
   Widget build(BuildContext context) {
-    if (_tourLoaded && _tour == null) {
-      // TODO: show error popup
-      throw Exception("Error: loaded tour is null");
-    }
-
     return LayoutBuilder(builder: (context, constraints) {
       final contentEditor = _TourContentEditor(
         key: _contentEditorKey,
         tourId: widget.tourId,
-        tour: _tour,
         waypoints: waypoints,
-        onTourNameChanged: (value) {
-          _tour?.name = value;
-          _updateSaveTimer();
-        },
-        onTourDescChanged: (value) {
-          _tour?.desc = value;
-          _updateSaveTimer();
-        },
       );
 
       final map = TourMap(
@@ -113,13 +92,6 @@ class _TourEditorState extends State<TourEditor> {
     });
   }
 
-  void _updateSaveTimer() {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 500), () {
-      db.updateTour(widget.tourId, _tour!);
-    });
-  }
-
   void _onEvent(Event event) {
     if (event.desc == WaypointsEventDescriptor(tourId: widget.tourId)) {
       setState(() {
@@ -129,24 +101,44 @@ class _TourEditorState extends State<TourEditor> {
   }
 }
 
-class _TourContentEditor extends StatelessWidget {
+class _TourContentEditor extends StatefulWidget {
   const _TourContentEditor({
     Key? key,
     required this.tourId,
-    required this.tour,
     required this.waypoints,
-    required this.onTourDescChanged,
-    required this.onTourNameChanged,
   }) : super(key: key);
 
   final Uuid tourId;
-  final Tour? tour;
   final List<PointSummary> waypoints;
-  final void Function(String) onTourNameChanged;
-  final void Function(String) onTourDescChanged;
+
+  @override
+  State<_TourContentEditor> createState() => _TourContentEditorState();
+}
+
+class _TourContentEditorState extends State<_TourContentEditor> {
+  Timer? _saveTimer;
+
+  bool _tourLoaded = false;
+  Tour? _tour;
+
+  @override
+  void initState() {
+    super.initState();
+    db.loadTour(widget.tourId).then((tour) {
+      setState(() {
+        _tour = tour;
+        _tourLoaded = true;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_tourLoaded && _tour == null) {
+      // TODO: show error popup
+      throw Exception("Error: loaded tour is null");
+    }
+
     const inputDecoration = InputDecoration(
       border: OutlineInputBorder(),
       floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -165,22 +157,32 @@ class _TourContentEditor extends StatelessWidget {
               child: Column(
                 children: [
                   TextField(
-                    enabled: tour != null,
-                    controller: tour != null
-                        ? TextEditingController(text: tour!.name)
+                    enabled: _tour != null,
+                    controller: _tour != null
+                        ? TextEditingController(text: _tour!.name)
                         : null,
-                    onChanged: tour != null ? onTourNameChanged : null,
+                    onChanged: _tour != null
+                        ? (value) {
+                            _tour?.name = value;
+                            _updateSaveTimer();
+                          }
+                        : null,
                     decoration: inputDecoration.copyWith(labelText: "Title"),
                   ),
                   const SizedBox(height: 16.0),
                   TextField(
                     minLines: 8,
                     maxLines: 8,
-                    enabled: tour != null,
-                    controller: tour != null
-                        ? TextEditingController(text: tour!.desc)
+                    enabled: _tour != null,
+                    controller: _tour != null
+                        ? TextEditingController(text: _tour!.desc)
                         : null,
-                    onChanged: tour != null ? onTourDescChanged : null,
+                    onChanged: _tour != null
+                        ? (value) {
+                            _tour?.desc = value;
+                            _updateSaveTimer();
+                          }
+                        : null,
                     decoration:
                         inputDecoration.copyWith(labelText: "Description"),
                   ),
@@ -197,10 +199,15 @@ class _TourContentEditor extends StatelessWidget {
             ),
             Expanded(
               child: TabBarView(children: [
-                WaypointList(
-                  tourId: tourId,
-                  waypoints: waypoints,
-                  onWaypointTap: (waypoint) {},
+                Stack(
+                  children: [
+                    WaypointList(
+                      tourId: widget.tourId,
+                      waypoints: widget.waypoints,
+                      onWaypointTap: (waypoint) {},
+                    ),
+                    const WaypointEditor(),
+                  ],
                 ),
                 const Text("This is where the POI editor goes."),
               ]),
@@ -209,5 +216,12 @@ class _TourContentEditor extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _updateSaveTimer() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 500), () {
+      db.updateTour(widget.tourId, _tour!);
+    });
   }
 }
