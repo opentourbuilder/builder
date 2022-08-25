@@ -58,11 +58,11 @@ class _TourEditorState extends State<TourEditor> {
         tour: _tour,
         waypoints: waypoints,
         onTourNameChanged: (value) {
-          setState(() => _tour?.name = value);
+          _tour?.name = value;
           _updateSaveTimer();
         },
         onTourDescChanged: (value) {
-          setState(() => _tour?.desc = value);
+          _tour?.desc = value;
           _updateSaveTimer();
         },
       );
