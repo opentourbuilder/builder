@@ -94,7 +94,7 @@ class _TourEditorState extends State<TourEditor> {
       }
 
       return ChangeNotifierProvider(
-        create: (_) => TourEditorModel(),
+        create: (_) => TourEditorModel(tourId: widget.tourId),
         child: child,
       );
     });
@@ -153,8 +153,6 @@ class _TourContentEditorState extends State<_TourContentEditor> {
       floatingLabelAlignment: FloatingLabelAlignment.start,
       isDense: true,
     );
-
-    var model = context.watch<TourEditorModel>();
 
     return DefaultTabController(
       length: 2,
@@ -215,7 +213,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                       tourId: widget.tourId,
                       waypoints: widget.waypoints,
                     ),
-                    if (model.selectedWaypoint != null) const WaypointEditor(),
+                    const WaypointEditor(),
                   ],
                 ),
                 const Text("This is where the POI editor goes."),

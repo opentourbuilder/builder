@@ -10,6 +10,10 @@ const colorScheme = ColorScheme.light(
 
 var themeData = ThemeData(
   useMaterial3: true,
+  cardTheme: const CardTheme(
+    color: Color(0xFFFFFFFF),
+    surfaceTintColor: Color(0x118888FF),
+  ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ButtonStyle(
       padding: MaterialStateProperty.all(
