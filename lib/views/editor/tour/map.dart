@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '/db/db.dart';
 import '/models/editor/tour.dart';
+import '/router.dart';
 
 class TourMap extends StatefulWidget {
   const TourMap({
@@ -21,8 +22,33 @@ class TourMap extends StatefulWidget {
 }
 
 class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
+  ValhallaRouter router = ValhallaRouter();
+  List<LatLng>? route;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.waypoints.length >= 2) {
+      router
+          .route(widget.waypoints.map((w) => LatLng(w.lat, w.lng)))
+          .then((value) => setState(() => route = value));
+    }
+  }
+
+  @override
+  void didUpdateWidget(TourMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.waypoints.length >= 2) {
+      router
+          .route(widget.waypoints.map((w) => LatLng(w.lat, w.lng)))
+          .then((value) => setState(() => route = value));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +88,18 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                   Icons.location_pin,
                   color: Colors.red,
                 ),
+              ),
+          ],
+        ),
+        PolylineLayerOptions(
+          polylineCulling: false,
+          polylines: [
+            if (route != null)
+              Polyline(
+                points: route!,
+                color: Colors.red,
+                borderColor: Colors.black,
+                strokeWidth: 3.5,
               ),
           ],
         ),
