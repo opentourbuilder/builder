@@ -72,26 +72,18 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
         zoom: 4,
         maxZoom: 18,
       ),
-      layers: [
-        TileLayerOptions(
+      nonRotatedChildren: [
+        AttributionWidget.defaultWidget(
+          source: 'OpenStreetMap contributors',
+          onSourceTapped: null,
+        ),
+      ],
+      children: [
+        TileLayer(
           urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-          userAgentPackageName: 'org.evresi.builder',
+          userAgentPackageName: "org.evresi.builder",
         ),
-        MarkerLayerOptions(
-          markers: [
-            for (var waypoint in widget.waypoints)
-              Marker(
-                point: LatLng(waypoint.lat, waypoint.lng),
-                width: 20,
-                height: 20,
-                builder: (context) => const Icon(
-                  Icons.location_pin,
-                  color: Colors.red,
-                ),
-              ),
-          ],
-        ),
-        PolylineLayerOptions(
+        PolylineLayer(
           polylineCulling: false,
           polylines: [
             if (route != null)
@@ -103,13 +95,47 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
               ),
           ],
         ),
-      ],
-      nonRotatedChildren: [
-        AttributionWidget.defaultWidget(
-          source: 'OpenStreetMap contributors',
-          onSourceTapped: null,
+        MarkerLayer(
+          markers: [
+            for (var waypoint in widget.waypoints.asMap().entries)
+              Marker(
+                point: LatLng(waypoint.value.lat, waypoint.value.lng),
+                width: 35,
+                height: 35,
+                builder: (context) => _TourMapIcon(
+                  index: waypoint.key,
+                  onPressed: () {},
+                ),
+              ),
+          ],
         ),
       ],
+    );
+  }
+}
+
+class _TourMapIcon extends StatelessWidget {
+  const _TourMapIcon({Key? key, required this.onPressed, required this.index})
+      : super(key: key);
+
+  final void Function() onPressed;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawMaterialButton(
+      shape: const CircleBorder(
+        side: BorderSide(color: Colors.black, width: 3),
+      ),
+      fillColor: const Color.fromARGB(255, 255, 73, 73),
+      onPressed: onPressed,
+      child: Text(
+        '${index + 1}',
+        style: Theme.of(context).textTheme.button?.copyWith(
+              fontSize: 16.0,
+              color: Colors.white,
+            ),
+      ),
     );
   }
 }
