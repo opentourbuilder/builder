@@ -100,8 +100,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
             for (var waypoint in widget.waypoints.asMap().entries)
               Marker(
                 point: LatLng(waypoint.value.lat, waypoint.value.lng),
-                width: 35,
-                height: 35,
+                width: 30,
+                height: 30,
                 builder: (context) => _TourMapIcon(
                   index: waypoint.key,
                   onPressed: () {},
@@ -125,14 +125,14 @@ class _TourMapIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return RawMaterialButton(
       shape: const CircleBorder(
-        side: BorderSide(color: Colors.black, width: 3),
+        side: BorderSide(color: Colors.black, width: 2.5),
       ),
       fillColor: const Color.fromARGB(255, 255, 73, 73),
       onPressed: onPressed,
       child: Text(
         '${index + 1}',
         style: Theme.of(context).textTheme.button?.copyWith(
-              fontSize: 16.0,
+              fontSize: 14.0,
               color: Colors.white,
             ),
       ),
