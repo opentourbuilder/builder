@@ -1,21 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '/db/db.dart';
+import '/db/db.dart' as db;
 import '/models/editor/tour.dart';
 import '/router.dart';
 
 class TourMap extends StatefulWidget {
   const TourMap({
     Key? key,
-    required this.waypoints,
     required this.tourId,
   }) : super(key: key);
 
-  final List<PointSummary> waypoints;
-  final Uuid tourId;
+  final db.Uuid tourId;
 
   @override
   State<TourMap> createState() => _TourMapState();
@@ -25,6 +25,10 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   ValhallaRouter router = ValhallaRouter();
   List<LatLng>? route;
 
+  StreamSubscription<db.Event>? _eventsSubscription;
+
+  List<db.PointSummary> _waypoints = [];
+
   @override
   bool get wantKeepAlive => true;
 
@@ -32,20 +36,25 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
 
-    if (widget.waypoints.length >= 2) {
-      router
-          .route(widget.waypoints.map((w) => LatLng(w.lat, w.lng)))
-          .then((value) => setState(() => route = value));
-    }
+    _eventsSubscription = db.instance.events.listen(_onEvent);
+    db.instance
+        .requestEvent(db.WaypointsEventDescriptor(tourId: widget.tourId));
   }
 
   @override
-  void didUpdateWidget(TourMap oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void dispose() {
+    _eventsSubscription?.cancel();
+    super.dispose();
+  }
 
-    if (widget.waypoints.length >= 2) {
+  void _onEvent(db.Event event) {
+    if (event.desc == db.WaypointsEventDescriptor(tourId: widget.tourId)) {
+      setState(() {
+        _waypoints = event.value;
+      });
+
       router
-          .route(widget.waypoints.map((w) => LatLng(w.lat, w.lng)))
+          .route(_waypoints.map((w) => LatLng(w.lat, w.lng)))
           .then((value) => setState(() => route = value));
     }
   }
@@ -61,10 +70,11 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
         onTap: (tapPosition, point) {
           var selectedWaypoint = tourEditorModel.selectedWaypoint;
           if (selectedWaypoint != null) {
-            db.loadWaypoint(selectedWaypoint).then((value) {
+            db.instance.loadWaypoint(selectedWaypoint).then((value) {
               value!.lat = point.latitude;
               value.lng = point.longitude;
-              db.updateWaypoint(widget.tourId, selectedWaypoint, value);
+              db.instance
+                  .updateWaypoint(widget.tourId, selectedWaypoint, value);
             });
           }
         },
@@ -97,14 +107,16 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
         ),
         MarkerLayer(
           markers: [
-            for (var waypoint in widget.waypoints.asMap().entries)
+            for (var waypoint in _waypoints.asMap().entries)
               Marker(
                 point: LatLng(waypoint.value.lat, waypoint.value.lng),
                 width: 30,
                 height: 30,
                 builder: (context) => _TourMapIcon(
                   index: waypoint.key,
-                  onPressed: () {},
+                  onPressed: () {
+                    tourEditorModel.selectWaypoint(waypoint.value.id);
+                  },
                 ),
               ),
           ],

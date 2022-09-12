@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -20,7 +19,7 @@ Future<void> initEvresiDatabase() async {
   await _db.open(inMemoryDatabasePath);
 }
 
-EvresiDatabase get db => _db;
+EvresiDatabase get instance => _db;
 
 class EvresiDatabase {
   late Database _db;

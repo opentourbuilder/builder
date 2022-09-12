@@ -54,8 +54,8 @@ class _SidebarState extends State<Sidebar> {
     super.initState();
 
     // subscribe to events from the db and request the list of tours
-    _eventsSubscription = db.events.listen(_onEvent);
-    db.requestEvent(const ToursEventDescriptor());
+    _eventsSubscription = instance.events.listen(_onEvent);
+    instance.requestEvent(const ToursEventDescriptor());
   }
 
   @override
@@ -103,7 +103,7 @@ class _SidebarState extends State<Sidebar> {
                 "New Tour",
                 leading: const Icon(Icons.add),
                 onTap: () {
-                  db.createTour(Tour(name: "New tour", desc: ""));
+                  instance.createTour(Tour(name: "New tour", desc: ""));
                 },
               ),
               const Expanded(

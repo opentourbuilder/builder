@@ -3,16 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '/db/db.dart';
+import '/db/db.dart' as db;
 import '/models/editor/tour.dart';
 import 'tour/map.dart';
-import 'tour/waypoint_editor.dart';
-import 'tour/waypoint_list.dart';
+import 'tour/waypoints.dart';
 
 class TourEditor extends StatefulWidget {
   const TourEditor({Key? key, required this.tourId}) : super(key: key);
 
-  final Uuid tourId;
+  final db.Uuid tourId;
 
   @override
   State<TourEditor> createState() => _TourEditorState();
@@ -22,35 +21,16 @@ class _TourEditorState extends State<TourEditor> {
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
 
-  StreamSubscription<Event>? _eventsSubscription;
-
-  List<PointSummary> waypoints = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _eventsSubscription = db.events.listen(_onEvent);
-    db.requestEvent(WaypointsEventDescriptor(tourId: widget.tourId));
-  }
-
-  @override
-  void dispose() {
-    _eventsSubscription?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final contentEditor = _TourContentEditor(
         key: _contentEditorKey,
         tourId: widget.tourId,
-        waypoints: waypoints,
       );
 
       final map = TourMap(
         key: _mapKey,
-        waypoints: waypoints,
         tourId: widget.tourId,
       );
 
@@ -99,25 +79,15 @@ class _TourEditorState extends State<TourEditor> {
       );
     });
   }
-
-  void _onEvent(Event event) {
-    if (event.desc == WaypointsEventDescriptor(tourId: widget.tourId)) {
-      setState(() {
-        waypoints = event.value;
-      });
-    }
-  }
 }
 
 class _TourContentEditor extends StatefulWidget {
   const _TourContentEditor({
     Key? key,
     required this.tourId,
-    required this.waypoints,
   }) : super(key: key);
 
-  final Uuid tourId;
-  final List<PointSummary> waypoints;
+  final db.Uuid tourId;
 
   @override
   State<_TourContentEditor> createState() => _TourContentEditorState();
@@ -127,12 +97,12 @@ class _TourContentEditorState extends State<_TourContentEditor> {
   Timer? _saveTimer;
 
   bool _tourLoaded = false;
-  Tour? _tour;
+  db.Tour? _tour;
 
   @override
   void initState() {
     super.initState();
-    db.loadTour(widget.tourId).then((tour) {
+    db.instance.loadTour(widget.tourId).then((tour) {
       setState(() {
         _tour = tour;
         _tourLoaded = true;
@@ -207,14 +177,8 @@ class _TourContentEditorState extends State<_TourContentEditor> {
             ),
             Expanded(
               child: TabBarView(children: [
-                Stack(
-                  children: [
-                    WaypointList(
-                      tourId: widget.tourId,
-                      waypoints: widget.waypoints,
-                    ),
-                    const WaypointEditor(),
-                  ],
+                Waypoints(
+                  tourId: widget.tourId,
                 ),
                 const Text("This is where the POI editor goes."),
               ]),
@@ -228,7 +192,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
   void _updateSaveTimer() {
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(milliseconds: 500), () {
-      db.updateTour(widget.tourId, _tour!);
+      db.instance.updateTour(widget.tourId, _tour!);
     });
   }
 }
