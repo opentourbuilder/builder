@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/services.dart';
-
-import '/models/editor/tour.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
+import '/models/editor/tour.dart';
+import '/widgets/modal.dart';
 
 class Waypoints extends StatefulWidget {
   const Waypoints({
@@ -249,73 +248,55 @@ class _WaypointEditorState extends State<_WaypointEditor> {
       duration: const Duration(milliseconds: 150),
       child: IgnorePointer(
         ignoring: widget.selectedWaypoint == null,
-        child: Card(
-          elevation: 4.0,
-          margin: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 8.0),
-              Text(
-                "Edit Waypoint",
-                style: Theme.of(context).textTheme.titleMedium!,
-              ),
-              const SizedBox(height: 8.0),
-              const Divider(
-                height: 2.0,
-                thickness: 2.0,
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        decoration: _waypointEditorInputDecoration.copyWith(
-                            labelText: "Title"),
-                        controller:
-                            TextEditingController(text: waypoint?.name!),
-                        onChanged: (name) {
-                          waypoint!.name = name;
-                          db.instance.updateWaypoint(
-                              tourEditorModel.tourId, waypointId!, waypoint!);
-                        },
-                      ),
-                      const SizedBox(height: 16.0),
-                      TextField(
-                        decoration: _waypointEditorInputDecoration.copyWith(
-                            labelText: "Description"),
-                        minLines: 4,
-                        maxLines: 4,
-                        controller:
-                            TextEditingController(text: waypoint?.desc!),
-                        onChanged: (desc) {
-                          waypoint!.desc = desc;
-                          db.instance.updateWaypoint(
-                              tourEditorModel.tourId, waypointId!, waypoint!);
-                        },
-                      ),
-                      const SizedBox(height: 16.0),
-                      LocationField(
-                        waypoint: waypoint,
-                      ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton(
-                        child: UnconstrainedBox(
-                          child: Row(
-                            children: const [
-                              Icon(Icons.check),
-                              SizedBox(width: 16.0),
-                              Text("Done"),
-                            ],
-                          ),
-                        ),
-                        onPressed: () => widget.selectWaypoint(null),
-                      ),
-                    ],
-                  ),
+        child: Modal(
+          title: const Text("Edit Waypoint"),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: _waypointEditorInputDecoration.copyWith(
+                      labelText: "Title"),
+                  controller: TextEditingController(text: waypoint?.name!),
+                  onChanged: (name) {
+                    waypoint!.name = name;
+                    db.instance.updateWaypoint(
+                        tourEditorModel.tourId, waypointId!, waypoint!);
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: 16.0),
+                TextField(
+                  decoration: _waypointEditorInputDecoration.copyWith(
+                      labelText: "Description"),
+                  minLines: 4,
+                  maxLines: 4,
+                  controller: TextEditingController(text: waypoint?.desc!),
+                  onChanged: (desc) {
+                    waypoint!.desc = desc;
+                    db.instance.updateWaypoint(
+                        tourEditorModel.tourId, waypointId!, waypoint!);
+                  },
+                ),
+                const SizedBox(height: 16.0),
+                LocationField(
+                  lat: waypoint?.lat,
+                  lng: waypoint?.lng,
+                ),
+                const SizedBox(height: 16.0),
+                ElevatedButton(
+                  child: UnconstrainedBox(
+                    child: Row(
+                      children: const [
+                        Icon(Icons.check),
+                        SizedBox(width: 16.0),
+                        Text("Done"),
+                      ],
+                    ),
+                  ),
+                  onPressed: () => widget.selectWaypoint(null),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -326,10 +307,12 @@ class _WaypointEditorState extends State<_WaypointEditor> {
 class LocationField extends StatefulWidget {
   const LocationField({
     super.key,
-    required this.waypoint,
+    required this.lat,
+    required this.lng,
   });
 
-  final db.Waypoint? waypoint;
+  final double? lat;
+  final double? lng;
 
   @override
   State<StatefulWidget> createState() => _LocationFieldState();
@@ -346,6 +329,7 @@ class _LocationFieldState extends State<LocationField> {
   @override
   void initState() {
     super.initState();
+
     latController.addListener(() {
       final String text = latController.text.replaceAll(RegExp(r'[^\d.-]'), "");
       latController.value = latController.value.copyWith(
@@ -390,6 +374,21 @@ class _LocationFieldState extends State<LocationField> {
         }
       });
     });
+
+    lat = widget.lat ?? 0;
+    lng = widget.lng ?? 0;
+    latController.text = '$lat';
+    lngController.text = '$lng';
+  }
+
+  @override
+  void didUpdateWidget(covariant LocationField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    lat = widget.lat ?? 0;
+    lng = widget.lng ?? 0;
+    latController.text = '$lat';
+    lngController.text = '$lng';
   }
 
   @override
