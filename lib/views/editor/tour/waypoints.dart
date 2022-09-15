@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/services.dart';
 
 import '/models/editor/tour.dart';
 import 'package:flutter/material.dart';
@@ -198,6 +201,16 @@ class _WaypointState extends State<_Waypoint> {
   }
 }
 
+const _waypointEditorInputDecoration = InputDecoration(
+  border: OutlineInputBorder(),
+  filled: true,
+  fillColor: Color(0xFFFFFFFF),
+  hoverColor: Color(0xFFFFFFFF),
+  floatingLabelBehavior: FloatingLabelBehavior.always,
+  floatingLabelAlignment: FloatingLabelAlignment.start,
+  isDense: true,
+);
+
 class _WaypointEditor extends StatefulWidget {
   const _WaypointEditor({
     super.key,
@@ -256,16 +269,8 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                 child: Column(
                   children: [
                     TextField(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        filled: true,
-                        fillColor: Color(0xFFFFFFFF),
-                        hoverColor: Color(0xFFFFFFFF),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        floatingLabelAlignment: FloatingLabelAlignment.start,
-                        isDense: true,
-                        labelText: "Title",
-                      ),
+                      decoration: _waypointEditorInputDecoration.copyWith(
+                          labelText: "Title"),
                       controller: TextEditingController(text: waypoint?.name!),
                       onChanged: (name) {
                         waypoint!.name = name;
@@ -275,16 +280,8 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                     ),
                     const SizedBox(height: 16.0),
                     TextField(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        filled: true,
-                        fillColor: Color(0xFFFFFFFF),
-                        hoverColor: Color(0xFFFFFFFF),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        floatingLabelAlignment: FloatingLabelAlignment.start,
-                        isDense: true,
-                        labelText: "Description",
-                      ),
+                      decoration: _waypointEditorInputDecoration.copyWith(
+                          labelText: "Description"),
                       minLines: 4,
                       maxLines: 4,
                       controller: TextEditingController(text: waypoint?.desc!),
@@ -293,6 +290,10 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                         db.instance.updateWaypoint(
                             tourEditorModel.tourId, waypointId!, waypoint!);
                       },
+                    ),
+                    const SizedBox(height: 16.0),
+                    LocationField(
+                      waypoint: waypoint,
                     ),
                     const SizedBox(height: 16.0),
                     ElevatedButton(
@@ -314,6 +315,118 @@ class _WaypointEditorState extends State<_WaypointEditor> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class LocationField extends StatefulWidget {
+  const LocationField({
+    super.key,
+    required this.waypoint,
+  });
+
+  final db.Waypoint? waypoint;
+
+  @override
+  State<StatefulWidget> createState() => _LocationFieldState();
+}
+
+class _LocationFieldState extends State<LocationField> {
+  final TextEditingController latController = TextEditingController();
+  final TextEditingController lngController = TextEditingController();
+  bool latBad = false;
+  bool lngBad = false;
+  double lat = 0;
+  double lng = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    latController.addListener(() {
+      final String text = latController.text.replaceAll(RegExp(r'[^\d.-]'), "");
+      latController.value = latController.value.copyWith(
+        text: text,
+        selection: TextSelection(
+          baseOffset:
+              min(latController.value.selection.baseOffset, text.length),
+          extentOffset:
+              min(latController.value.selection.extentOffset, text.length),
+        ),
+      );
+
+      double? newLat = double.tryParse(text);
+      setState(() {
+        if (newLat != null) {
+          lat = newLat;
+          latBad = false;
+        } else {
+          latBad = true;
+        }
+      });
+    });
+    lngController.addListener(() {
+      final String text = lngController.text.replaceAll(RegExp(r'[^\d.-]'), "");
+      lngController.value = lngController.value.copyWith(
+        text: text,
+        selection: TextSelection(
+          baseOffset:
+              min(latController.value.selection.baseOffset, text.length),
+          extentOffset:
+              min(latController.value.selection.extentOffset, text.length),
+        ),
+      );
+
+      double? newLng = double.tryParse(text);
+      setState(() {
+        if (newLng != null) {
+          lng = newLng;
+          lngBad = false;
+        } else {
+          lngBad = true;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    latController.dispose();
+    lngController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            decoration: _waypointEditorInputDecoration
+                .copyWith(labelText: "Latitude")
+                .copyWith(errorText: latBad ? "Invalid latitude" : null),
+            controller: latController,
+          ),
+        ),
+        const SizedBox(width: 8.0),
+        Expanded(
+          child: TextField(
+            decoration: _waypointEditorInputDecoration
+                .copyWith(labelText: "Longitude")
+                .copyWith(errorText: lngBad ? "Invalid longitude" : null),
+            controller: lngController,
+          ),
+        ),
+        const SizedBox(width: 8.0),
+        ElevatedButton(
+          onPressed: () {},
+          style: ButtonStyle(
+            backgroundColor: MaterialStatePropertyAll(
+                Theme.of(context).colorScheme.secondary),
+          ),
+          child: const Icon(Icons.pin_drop),
+        ),
+      ],
     );
   }
 }
