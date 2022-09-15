@@ -29,12 +29,9 @@ class _WaypointsState extends State<Waypoints> {
           tourId: widget.tourId,
           selectWaypoint: (id) => setState(() => selectedWaypoint = id),
         ),
-        UnconstrainedBox(
-          constrainedAxis: Axis.horizontal,
-          child: _WaypointEditor(
-            selectedWaypoint: selectedWaypoint,
-            selectWaypoint: (id) => setState(() => selectedWaypoint = id),
-          ),
+        _WaypointEditor(
+          selectedWaypoint: selectedWaypoint,
+          selectWaypoint: (id) => setState(() => selectedWaypoint = id),
         ),
       ],
     );
@@ -85,7 +82,7 @@ class _WaypointListState extends State<_WaypointList> {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(12.0),
       itemCount: _waypoints.length + 1,
       itemBuilder: (context, index) {
         if (index < _waypoints.length) {
@@ -241,12 +238,22 @@ class _WaypointEditorState extends State<_WaypointEditor> {
         ignoring: widget.selectedWaypoint == null,
         child: Card(
           elevation: 4.0,
-          margin: const EdgeInsets.all(32.0),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Column(
+          margin: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 8.0),
+              Text(
+                "Edit Waypoint",
+                style: Theme.of(context).textTheme.titleMedium!,
+              ),
+              const SizedBox(height: 8.0),
+              const Divider(
+                height: 2.0,
+                thickness: 2.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   children: [
                     TextField(
                       decoration: const InputDecoration(
@@ -287,23 +294,23 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                             tourEditorModel.tourId, waypointId!, waypoint!);
                       },
                     ),
+                    const SizedBox(height: 16.0),
+                    ElevatedButton(
+                      child: UnconstrainedBox(
+                        child: Row(
+                          children: const [
+                            Icon(Icons.check),
+                            SizedBox(width: 16.0),
+                            Text("Done"),
+                          ],
+                        ),
+                      ),
+                      onPressed: () => widget.selectWaypoint(null),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16.0),
-                ElevatedButton(
-                  child: UnconstrainedBox(
-                    child: Row(
-                      children: const [
-                        Icon(Icons.check),
-                        SizedBox(width: 16.0),
-                        Text("Done"),
-                      ],
-                    ),
-                  ),
-                  onPressed: () => widget.selectWaypoint(null),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
