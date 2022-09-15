@@ -494,7 +494,7 @@ class Uuid {
       other is Uuid && listEquals(bytes, other.bytes);
 
   @override
-  int get hashCode => hashList(bytes);
+  int get hashCode => Object.hashAll(bytes);
 
   String toHex() {
     String bitsToHexDigit(int bits) {
