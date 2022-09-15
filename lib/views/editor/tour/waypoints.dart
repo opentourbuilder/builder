@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
 
-class Waypoints extends StatelessWidget {
+class Waypoints extends StatefulWidget {
   const Waypoints({
     super.key,
     required this.tourId,
@@ -15,13 +15,26 @@ class Waypoints extends StatelessWidget {
   final db.Uuid tourId;
 
   @override
+  State<Waypoints> createState() => _WaypointsState();
+}
+
+class _WaypointsState extends State<Waypoints> {
+  db.Uuid? selectedWaypoint;
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        _WaypointList(tourId: tourId),
-        const UnconstrainedBox(
+        _WaypointList(
+          tourId: widget.tourId,
+          selectWaypoint: (id) => selectedWaypoint = id,
+        ),
+        UnconstrainedBox(
           constrainedAxis: Axis.horizontal,
-          child: _WaypointEditor(),
+          child: _WaypointEditor(
+            selectedWaypoint: selectedWaypoint,
+            selectWaypoint: (id) => selectedWaypoint = id,
+          ),
         ),
       ],
     );
@@ -32,9 +45,11 @@ class _WaypointList extends StatefulWidget {
   const _WaypointList({
     Key? key,
     required this.tourId,
+    required this.selectWaypoint,
   }) : super(key: key);
 
   final db.Uuid tourId;
+  final void Function(db.Uuid?) selectWaypoint;
 
   @override
   State<_WaypointList> createState() => _WaypointListState();
@@ -77,9 +92,7 @@ class _WaypointListState extends State<_WaypointList> {
           return _Waypoint(
             key: ValueKey(_waypoints[index].id),
             index: index,
-            onTap: () => context
-                .read<TourEditorModel>()
-                .selectWaypoint(_waypoints[index].id),
+            onTap: () => widget.selectWaypoint(_waypoints[index].id),
             summary: _waypoints[index],
           );
         } else {
@@ -189,7 +202,14 @@ class _WaypointState extends State<_Waypoint> {
 }
 
 class _WaypointEditor extends StatefulWidget {
-  const _WaypointEditor({Key? key}) : super(key: key);
+  const _WaypointEditor({
+    super.key,
+    required this.selectedWaypoint,
+    required this.selectWaypoint,
+  });
+
+  final db.Uuid? selectedWaypoint;
+  final void Function(db.Uuid?) selectWaypoint;
 
   @override
   State<StatefulWidget> createState() => _WaypointEditorState();
@@ -203,8 +223,8 @@ class _WaypointEditorState extends State<_WaypointEditor> {
   Widget build(BuildContext context) {
     var tourEditorModel = context.watch<TourEditorModel>();
 
-    if (tourEditorModel.selectedWaypoint != waypointId) {
-      waypointId = tourEditorModel.selectedWaypoint;
+    if (widget.selectedWaypoint != waypointId) {
+      waypointId = widget.selectedWaypoint;
 
       if (waypointId != null) {
         db.instance
@@ -214,11 +234,11 @@ class _WaypointEditorState extends State<_WaypointEditor> {
     }
 
     return AnimatedScale(
-      scale: tourEditorModel.selectedWaypoint != null ? 1.0 : 0.0,
+      scale: widget.selectedWaypoint != null ? 1.0 : 0.0,
       curve: Curves.ease,
       duration: const Duration(milliseconds: 150),
       child: IgnorePointer(
-        ignoring: tourEditorModel.selectedWaypoint == null,
+        ignoring: widget.selectedWaypoint == null,
         child: Card(
           elevation: 4.0,
           margin: const EdgeInsets.all(32.0),
@@ -280,7 +300,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                       ],
                     ),
                   ),
-                  onPressed: () => tourEditorModel.selectWaypoint(null),
+                  onPressed: () => widget.selectWaypoint(null),
                 ),
               ],
             ),

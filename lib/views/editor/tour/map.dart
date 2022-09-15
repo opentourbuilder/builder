@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -63,21 +64,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   Widget build(BuildContext context) {
     super.build(context);
 
-    var tourEditorModel = context.watch<TourEditorModel>();
-
     return FlutterMap(
       options: MapOptions(
-        onTap: (tapPosition, point) {
-          var selectedWaypoint = tourEditorModel.selectedWaypoint;
-          if (selectedWaypoint != null) {
-            db.instance.loadWaypoint(selectedWaypoint).then((value) {
-              value!.lat = point.latitude;
-              value.lng = point.longitude;
-              db.instance
-                  .updateWaypoint(widget.tourId, selectedWaypoint, value);
-            });
-          }
-        },
         center: LatLng(37.09024, -95.712891),
         zoom: 4,
         maxZoom: 18,
@@ -105,18 +93,33 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
               ),
           ],
         ),
-        MarkerLayer(
+        DragMarkers(
           markers: [
             for (var waypoint in _waypoints.asMap().entries)
-              Marker(
+              DragMarker(
                 point: LatLng(waypoint.value.lat, waypoint.value.lng),
                 width: 30,
                 height: 30,
+                preservePosition: false,
+                onDragEnd: (details, point) {
+                  db.instance.loadWaypoint(waypoint.value.id).then(
+                    (loadedWaypoint) {
+                      loadedWaypoint?.lat = point.latitude;
+                      loadedWaypoint?.lng = point.longitude;
+
+                      if (loadedWaypoint != null) {
+                        db.instance.updateWaypoint(
+                          widget.tourId,
+                          waypoint.value.id,
+                          loadedWaypoint,
+                        );
+                      }
+                    },
+                  );
+                },
                 builder: (context) => _TourMapIcon(
                   index: waypoint.key,
-                  onPressed: () {
-                    tourEditorModel.selectWaypoint(waypoint.value.id);
-                  },
+                  onPressed: () {},
                 ),
               ),
           ],
