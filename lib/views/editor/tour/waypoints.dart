@@ -27,13 +27,13 @@ class _WaypointsState extends State<Waypoints> {
       children: [
         _WaypointList(
           tourId: widget.tourId,
-          selectWaypoint: (id) => selectedWaypoint = id,
+          selectWaypoint: (id) => setState(() => selectedWaypoint = id),
         ),
         UnconstrainedBox(
           constrainedAxis: Axis.horizontal,
           child: _WaypointEditor(
             selectedWaypoint: selectedWaypoint,
-            selectWaypoint: (id) => selectedWaypoint = id,
+            selectWaypoint: (id) => setState(() => selectedWaypoint = id),
           ),
         ),
       ],
