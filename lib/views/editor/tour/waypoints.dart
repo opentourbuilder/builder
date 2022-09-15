@@ -264,51 +264,55 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                 height: 2.0,
                 thickness: 2.0,
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: _waypointEditorInputDecoration.copyWith(
-                          labelText: "Title"),
-                      controller: TextEditingController(text: waypoint?.name!),
-                      onChanged: (name) {
-                        waypoint!.name = name;
-                        db.instance.updateWaypoint(
-                            tourEditorModel.tourId, waypointId!, waypoint!);
-                      },
-                    ),
-                    const SizedBox(height: 16.0),
-                    TextField(
-                      decoration: _waypointEditorInputDecoration.copyWith(
-                          labelText: "Description"),
-                      minLines: 4,
-                      maxLines: 4,
-                      controller: TextEditingController(text: waypoint?.desc!),
-                      onChanged: (desc) {
-                        waypoint!.desc = desc;
-                        db.instance.updateWaypoint(
-                            tourEditorModel.tourId, waypointId!, waypoint!);
-                      },
-                    ),
-                    const SizedBox(height: 16.0),
-                    LocationField(
-                      waypoint: waypoint,
-                    ),
-                    const SizedBox(height: 16.0),
-                    ElevatedButton(
-                      child: UnconstrainedBox(
-                        child: Row(
-                          children: const [
-                            Icon(Icons.check),
-                            SizedBox(width: 16.0),
-                            Text("Done"),
-                          ],
-                        ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      TextField(
+                        decoration: _waypointEditorInputDecoration.copyWith(
+                            labelText: "Title"),
+                        controller:
+                            TextEditingController(text: waypoint?.name!),
+                        onChanged: (name) {
+                          waypoint!.name = name;
+                          db.instance.updateWaypoint(
+                              tourEditorModel.tourId, waypointId!, waypoint!);
+                        },
                       ),
-                      onPressed: () => widget.selectWaypoint(null),
-                    ),
-                  ],
+                      const SizedBox(height: 16.0),
+                      TextField(
+                        decoration: _waypointEditorInputDecoration.copyWith(
+                            labelText: "Description"),
+                        minLines: 4,
+                        maxLines: 4,
+                        controller:
+                            TextEditingController(text: waypoint?.desc!),
+                        onChanged: (desc) {
+                          waypoint!.desc = desc;
+                          db.instance.updateWaypoint(
+                              tourEditorModel.tourId, waypointId!, waypoint!);
+                        },
+                      ),
+                      const SizedBox(height: 16.0),
+                      LocationField(
+                        waypoint: waypoint,
+                      ),
+                      const SizedBox(height: 16.0),
+                      ElevatedButton(
+                        child: UnconstrainedBox(
+                          child: Row(
+                            children: const [
+                              Icon(Icons.check),
+                              SizedBox(width: 16.0),
+                              Text("Done"),
+                            ],
+                          ),
+                        ),
+                        onPressed: () => widget.selectWaypoint(null),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -356,7 +360,7 @@ class _LocationFieldState extends State<LocationField> {
 
       double? newLat = double.tryParse(text);
       setState(() {
-        if (newLat != null) {
+        if (newLat != null && newLat >= -90 && newLat <= 90) {
           lat = newLat;
           latBad = false;
         } else {
@@ -378,7 +382,7 @@ class _LocationFieldState extends State<LocationField> {
 
       double? newLng = double.tryParse(text);
       setState(() {
-        if (newLng != null) {
+        if (newLng != null && newLng >= -180 && newLng <= 180) {
           lng = newLng;
           lngBad = false;
         } else {
@@ -402,18 +406,23 @@ class _LocationFieldState extends State<LocationField> {
       children: [
         Expanded(
           child: TextField(
-            decoration: _waypointEditorInputDecoration
-                .copyWith(labelText: "Latitude")
-                .copyWith(errorText: latBad ? "Invalid latitude" : null),
+            decoration: _waypointEditorInputDecoration.copyWith(
+              labelText: "Latitude",
+              errorText: latBad ? "Must be a number between -90 and 90" : null,
+              errorMaxLines: 2,
+            ),
             controller: latController,
           ),
         ),
         const SizedBox(width: 8.0),
         Expanded(
           child: TextField(
-            decoration: _waypointEditorInputDecoration
-                .copyWith(labelText: "Longitude")
-                .copyWith(errorText: lngBad ? "Invalid longitude" : null),
+            decoration: _waypointEditorInputDecoration.copyWith(
+              labelText: "Longitude",
+              errorText:
+                  lngBad ? "Must be a number between -180 and 180" : null,
+              errorMaxLines: 2,
+            ),
             controller: lngController,
           ),
         ),
