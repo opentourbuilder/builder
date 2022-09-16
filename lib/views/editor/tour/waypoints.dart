@@ -285,8 +285,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                 ),
                 const SizedBox(height: 16.0),
                 LocationField(
-                  lat: waypoint?.lat,
-                  lng: waypoint?.lng,
+                  waypoint: waypoint,
                 ),
                 const SizedBox(height: 16.0),
                 ElevatedButton(
@@ -313,12 +312,10 @@ class _WaypointEditorState extends State<_WaypointEditor> {
 class LocationField extends StatefulWidget {
   const LocationField({
     super.key,
-    required this.lat,
-    required this.lng,
+    required this.waypoint,
   });
 
-  final double? lat;
-  final double? lng;
+  final DbWaypoint? waypoint;
 
   @override
   State<StatefulWidget> createState() => _LocationFieldState();
@@ -352,6 +349,7 @@ class _LocationFieldState extends State<LocationField> {
       setState(() {
         if (newLat != null && newLat >= -90 && newLat <= 90) {
           lat = newLat;
+          widget.waypoint?.lat = newLat;
           latBad = false;
         } else {
           latBad = true;
@@ -364,9 +362,9 @@ class _LocationFieldState extends State<LocationField> {
         text: text,
         selection: TextSelection(
           baseOffset:
-              min(latController.value.selection.baseOffset, text.length),
+              min(lngController.value.selection.baseOffset, text.length),
           extentOffset:
-              min(latController.value.selection.extentOffset, text.length),
+              min(lngController.value.selection.extentOffset, text.length),
         ),
       );
 
@@ -374,6 +372,7 @@ class _LocationFieldState extends State<LocationField> {
       setState(() {
         if (newLng != null && newLng >= -180 && newLng <= 180) {
           lng = newLng;
+          widget.waypoint?.lng = newLng;
           lngBad = false;
         } else {
           lngBad = true;
@@ -381,8 +380,8 @@ class _LocationFieldState extends State<LocationField> {
       });
     });
 
-    lat = widget.lat ?? 0;
-    lng = widget.lng ?? 0;
+    lat = widget.waypoint?.lat ?? 0;
+    lng = widget.waypoint?.lng ?? 0;
     latController.text = '$lat';
     lngController.text = '$lng';
   }
@@ -391,8 +390,8 @@ class _LocationFieldState extends State<LocationField> {
   void didUpdateWidget(covariant LocationField oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    lat = widget.lat ?? 0;
-    lng = widget.lng ?? 0;
+    lat = widget.waypoint?.lat ?? 0;
+    lng = widget.waypoint?.lng ?? 0;
     latController.text = '$lat';
     lngController.text = '$lng';
   }
