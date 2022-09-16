@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:builder/db/models/waypoint.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -102,7 +103,7 @@ class _WaypointListState extends State<_WaypointList> {
                 onPressed: () {
                   db.instance.createWaypoint(
                     widget.tourId,
-                    db.Waypoint(
+                    Waypoint(
                       name: "New waypoint",
                       desc: "",
                       lat: 0,
@@ -226,7 +227,13 @@ class _WaypointEditor extends StatefulWidget {
 
 class _WaypointEditorState extends State<_WaypointEditor> {
   db.Uuid? waypointId;
-  db.Waypoint? waypoint;
+  DbWaypoint? waypoint;
+
+  @override
+  void dispose() {
+    waypoint?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -236,9 +243,13 @@ class _WaypointEditorState extends State<_WaypointEditor> {
       waypointId = widget.selectedWaypoint;
 
       if (waypointId != null) {
-        db.instance
-            .loadWaypoint(waypointId!)
-            .then((value) => setState(() => waypoint = value));
+        db.instance.waypoint(tourEditorModel.tourId, waypointId!).then((value) {
+          if (waypoint != null) {
+            waypoint?.cancel();
+          }
+          value?.listen((() => setState(() {})));
+          setState(() => waypoint = value);
+        });
       }
     }
 
@@ -260,8 +271,6 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                   controller: TextEditingController(text: waypoint?.name!),
                   onChanged: (name) {
                     waypoint!.name = name;
-                    db.instance.updateWaypoint(
-                        tourEditorModel.tourId, waypointId!, waypoint!);
                   },
                 ),
                 const SizedBox(height: 16.0),
@@ -273,8 +282,6 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                   controller: TextEditingController(text: waypoint?.desc!),
                   onChanged: (desc) {
                     waypoint!.desc = desc;
-                    db.instance.updateWaypoint(
-                        tourEditorModel.tourId, waypointId!, waypoint!);
                   },
                 ),
                 const SizedBox(height: 16.0),

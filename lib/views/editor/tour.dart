@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:builder/db/models/tour.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -94,20 +95,27 @@ class _TourContentEditor extends StatefulWidget {
 }
 
 class _TourContentEditorState extends State<_TourContentEditor> {
-  Timer? _saveTimer;
-
   bool _tourLoaded = false;
-  db.Tour? _tour;
+  DbTour? _tour;
 
   @override
   void initState() {
     super.initState();
-    db.instance.loadTour(widget.tourId).then((tour) {
+    db.instance.tour(widget.tourId).then((tour) {
+      tour?.listen((() {
+        setState(() {});
+      }));
       setState(() {
         _tour = tour;
         _tourLoaded = true;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _tour?.cancel();
+    super.dispose();
   }
 
   @override
@@ -142,7 +150,6 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                     onChanged: _tour != null
                         ? (value) {
                             _tour?.name = value;
-                            _updateSaveTimer();
                           }
                         : null,
                     decoration: inputDecoration.copyWith(labelText: "Title"),
@@ -158,7 +165,6 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                     onChanged: _tour != null
                         ? (value) {
                             _tour?.desc = value;
-                            _updateSaveTimer();
                           }
                         : null,
                     decoration:
@@ -187,12 +193,5 @@ class _TourContentEditorState extends State<_TourContentEditor> {
         ),
       ),
     );
-  }
-
-  void _updateSaveTimer() {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 500), () {
-      db.instance.updateTour(widget.tourId, _tour!);
-    });
   }
 }

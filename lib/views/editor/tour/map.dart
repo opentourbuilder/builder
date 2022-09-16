@@ -102,18 +102,10 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                 height: 30,
                 preservePosition: false,
                 onDragEnd: (details, point) {
-                  db.instance.loadWaypoint(waypoint.value.id).then(
+                  db.instance.waypoint(widget.tourId, waypoint.value.id).then(
                     (loadedWaypoint) {
                       loadedWaypoint?.lat = point.latitude;
                       loadedWaypoint?.lng = point.longitude;
-
-                      if (loadedWaypoint != null) {
-                        db.instance.updateWaypoint(
-                          widget.tourId,
-                          waypoint.value.id,
-                          loadedWaypoint,
-                        );
-                      }
                     },
                   );
                 },
