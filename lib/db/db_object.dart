@@ -66,7 +66,7 @@ abstract class DbObjectInfo<I, D, O extends DbObject<I, D>> {
     listeners.remove(key);
 
     if (listeners.isEmpty) {
-      instance.dbObjects[id] = null;
+      instance.dbObjects.remove(id);
     }
   }
 

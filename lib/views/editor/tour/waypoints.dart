@@ -242,11 +242,10 @@ class _WaypointEditorState extends State<_WaypointEditor> {
     if (widget.selectedWaypoint != waypointId) {
       waypointId = widget.selectedWaypoint;
 
+      waypoint?.cancel();
+      waypoint = null;
       if (waypointId != null) {
         db.instance.waypoint(tourEditorModel.tourId, waypointId!).then((value) {
-          if (waypoint != null) {
-            waypoint?.cancel();
-          }
           value?.listen((() => setState(() {})));
           setState(() => waypoint = value);
         });
@@ -268,7 +267,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                 TextField(
                   decoration: _waypointEditorInputDecoration.copyWith(
                       labelText: "Title"),
-                  controller: TextEditingController(text: waypoint?.name!),
+                  controller: TextEditingController(text: waypoint?.name ?? ""),
                   onChanged: (name) {
                     waypoint!.name = name;
                   },
@@ -279,7 +278,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                       labelText: "Description"),
                   minLines: 4,
                   maxLines: 4,
-                  controller: TextEditingController(text: waypoint?.desc!),
+                  controller: TextEditingController(text: waypoint?.desc ?? ""),
                   onChanged: (desc) {
                     waypoint!.desc = desc;
                   },

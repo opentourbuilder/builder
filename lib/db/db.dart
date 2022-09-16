@@ -31,7 +31,7 @@ class EvresiDatabase {
 
   late Uuid currentRevision;
 
-  final Map<dynamic, DbObjectInfo?> dbObjects = {};
+  final Map<dynamic, DbObjectInfo> dbObjects = {};
 
   final StreamController<Event> _events = StreamController.broadcast();
   Stream<Event> get events => _events.stream;
@@ -94,11 +94,13 @@ class EvresiDatabase {
 
   Future<DbWaypoint?> waypoint(Uuid tourId, Uuid waypointId) async {
     var id = FullWaypointId(tourId: tourId, waypointId: waypointId);
-    var info = dbObjects[id] as DbWaypointInfo?;
+    DbWaypointInfo? info;
     if (!dbObjects.containsKey(id)) {
       info = await DbWaypointInfo.load(id);
 
       if (info != null) dbObjects[id] = info;
+    } else {
+      info = dbObjects[id] as DbWaypointInfo;
     }
 
     if (info != null) {
