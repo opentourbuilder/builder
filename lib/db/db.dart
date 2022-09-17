@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:builder/db/models/tour.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart' as uuid_lib;
 
 import './db_object.dart';
+import 'models/tour.dart';
 import 'models/waypoint.dart';
 
 export './db_object.dart';

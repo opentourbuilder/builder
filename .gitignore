@@ -46,5 +46,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Ignore Valhalla setup
-lotyr/
+# Ignore development "install" setup
+/install

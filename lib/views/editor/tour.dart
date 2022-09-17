@@ -1,10 +1,8 @@
-import 'dart:async';
-
-import 'package:builder/db/models/tour.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
+import '/db/models/tour.dart';
 import '/models/editor/tour.dart';
 import 'tour/map.dart';
 import 'tour/waypoints.dart';

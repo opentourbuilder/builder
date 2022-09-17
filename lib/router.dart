@@ -1,14 +1,15 @@
+import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:convert';
 
-import 'package:maps_toolkit/maps_toolkit.dart' as mtk;
 import 'package:async/async.dart';
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mtk;
 import 'package:path/path.dart' as path;
+
+import '/utils/utils.dart';
 
 abstract class Router {
   Future<Iterable<LatLng>> route(List<LatLng> waypoints);
@@ -102,17 +103,15 @@ class ValhallaRouter implements Router {
     final receivePort = ReceivePort();
     sendPort.send(receivePort.sendPort);
 
-    final pathBase = kDebugMode
-        ? Directory.current.path
-        : path.dirname(Platform.resolvedExecutable);
+    final installDir = getInstallDirectory();
 
     final String? libraryPath;
     if (Platform.isLinux) {
-      libraryPath = path.join(pathBase, 'lotyr', 'liblotyr.so');
+      libraryPath = path.join(installDir, 'lotyr', 'liblotyr.so');
     } else if (Platform.isMacOS) {
-      libraryPath = path.join(pathBase, 'lotyr', 'liblotyr.dylib');
+      libraryPath = path.join(installDir, 'lotyr', 'liblotyr.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(pathBase, 'lotyr', 'lotyr.dll');
+      libraryPath = path.join(installDir, 'lotyr', 'lotyr.dll');
     } else {
       libraryPath = null;
     }
@@ -139,7 +138,7 @@ class ValhallaRouter implements Router {
     // this will be the pointer to the Lotyr instance
     final lotyrPtr = malloc<ffi.Pointer>();
 
-    final configPath = path.join(pathBase, 'lotyr', 'valhalla.json');
+    final configPath = path.join(installDir, 'lotyr', 'valhalla.json');
     final configPathNative = configPath.toNativeUtf8(allocator: malloc);
     final createError = lotyrNew(lotyrPtr, configPathNative);
     malloc.free(configPathNative);

@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:builder/db/models/tour.dart';
-import 'package:builder/utils/evresi_page_route.dart';
-import 'package:builder/views/editor/tour.dart';
 import 'package:flutter/material.dart';
 
 import '/db/db.dart';
+import '/db/models/tour.dart';
+import '/utils/evresi_page_route.dart';
+import '/views/editor/tour.dart';
 import 'editor/home.dart';
 
 class EditorPage extends StatefulWidget {

@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Tour Builder',
       theme: themeData,
-      home: EditorPage(),
+      home: const EditorPage(),
     );
   }
 }

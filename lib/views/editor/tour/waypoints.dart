@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:builder/db/models/waypoint.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
+import '/db/models/waypoint.dart';
+import '/geocoder.dart';
 import '/models/editor/tour.dart';
 import '/widgets/modal.dart';
 
@@ -258,49 +259,56 @@ class _WaypointEditorState extends State<_WaypointEditor> {
       duration: const Duration(milliseconds: 150),
       child: IgnorePointer(
         ignoring: widget.selectedWaypoint == null,
-        child: Modal(
-          title: const Text("Edit Waypoint"),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  decoration: _waypointEditorInputDecoration.copyWith(
-                      labelText: "Title"),
-                  controller: TextEditingController(text: waypoint?.name ?? ""),
-                  onChanged: (name) {
-                    waypoint!.name = name;
-                  },
-                ),
-                const SizedBox(height: 16.0),
-                TextField(
-                  decoration: _waypointEditorInputDecoration.copyWith(
-                      labelText: "Description"),
-                  minLines: 4,
-                  maxLines: 4,
-                  controller: TextEditingController(text: waypoint?.desc ?? ""),
-                  onChanged: (desc) {
-                    waypoint!.desc = desc;
-                  },
-                ),
-                const SizedBox(height: 16.0),
-                LocationField(
-                  waypoint: waypoint,
-                ),
-                const SizedBox(height: 16.0),
-                ElevatedButton(
-                  child: UnconstrainedBox(
-                    child: Row(
-                      children: const [
-                        Icon(Icons.check),
-                        SizedBox(width: 16.0),
-                        Text("Done"),
-                      ],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Modal(
+            title: const Text("Edit Waypoint"),
+            child: Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: _waypointEditorInputDecoration.copyWith(
+                          labelText: "Title"),
+                      controller:
+                          TextEditingController(text: waypoint?.name ?? ""),
+                      onChanged: (name) {
+                        waypoint!.name = name;
+                      },
                     ),
-                  ),
-                  onPressed: () => widget.selectWaypoint(null),
+                    const SizedBox(height: 16.0),
+                    TextField(
+                      decoration: _waypointEditorInputDecoration.copyWith(
+                          labelText: "Description"),
+                      minLines: 4,
+                      maxLines: 4,
+                      controller:
+                          TextEditingController(text: waypoint?.desc ?? ""),
+                      onChanged: (desc) {
+                        waypoint!.desc = desc;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    LocationField(
+                      waypoint: waypoint,
+                    ),
+                    const SizedBox(height: 16.0),
+                    ElevatedButton(
+                      child: UnconstrainedBox(
+                        child: Row(
+                          children: const [
+                            Icon(Icons.check),
+                            SizedBox(width: 16.0),
+                            Text("Done"),
+                          ],
+                        ),
+                      ),
+                      onPressed: () => widget.selectWaypoint(null),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -432,7 +440,21 @@ class _LocationFieldState extends State<LocationField> {
         ),
         const SizedBox(width: 8.0),
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () async {
+            var place = await Navigator.of(context, rootNavigator: true)
+                .push(AddressModalRoute()) as Place?;
+
+            if (place != null) {
+              setState(() {
+                lat = place.lat;
+                widget.waypoint?.lat = place.lat;
+                lng = place.lng;
+                widget.waypoint?.lng = place.lng;
+                latController.text = '$lat';
+                lngController.text = '$lng';
+              });
+            }
+          },
           style: ButtonStyle(
             backgroundColor: MaterialStatePropertyAll(
                 Theme.of(context).colorScheme.secondary),
@@ -440,6 +462,139 @@ class _LocationFieldState extends State<LocationField> {
           child: const Icon(Icons.pin_drop),
         ),
       ],
+    );
+  }
+}
+
+class AddressModalRoute extends ModalRoute {
+  @override
+  Color? get barrierColor => const Color.fromARGB(64, 0, 0, 0);
+
+  @override
+  bool get barrierDismissible => true;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get maintainState => false;
+
+  @override
+  bool get opaque => false;
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 200);
+
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation) =>
+      const AddressModal();
+}
+
+class AddressModal extends StatefulWidget {
+  const AddressModal({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _AddressModalState();
+}
+
+class _AddressModalState extends State<AddressModal> {
+  String address = "";
+  Future<List<Place>> results = Future.value([]);
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      heightFactor: 0.8,
+      child: Center(
+        child: SizedBox(
+          width: 500,
+          child: Modal(
+            title: const Text("Set Location to Street Address"),
+            child: Expanded(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                        top: 16.0, left: 16.0, right: 16.0),
+                    child: TextField(
+                      onChanged: (value) {
+                        address = value;
+                      },
+                      onSubmitted: (value) {
+                        setState(() {
+                          results = GeocodioService.instance.then(
+                              (geocoder) => geocoder.forwardGeocode(address));
+                        });
+                      },
+                      decoration: _waypointEditorInputDecoration.copyWith(
+                          labelText: "Street Address"),
+                    ),
+                  ),
+                  Expanded(
+                    child: FutureBuilder<List<Place>>(
+                      future: results,
+                      builder: (context, snapshot) {
+                        switch (snapshot.connectionState) {
+                          case ConnectionState.none:
+                            return Container();
+                          case ConnectionState.waiting:
+                            return const Center(
+                              child: SizedBox(
+                                width: 60,
+                                height: 60,
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          case ConnectionState.active:
+                          case ConnectionState.done:
+                            if (snapshot.data != null) {
+                              return ListView(
+                                padding: const EdgeInsets.only(
+                                  left: 16.0,
+                                  right: 16.0,
+                                  bottom: 16.0,
+                                  top: 8.0,
+                                ),
+                                children: [
+                                  for (var place in snapshot.data!)
+                                    Card(
+                                      margin:
+                                          const EdgeInsets.only(bottom: 8.0),
+                                      child: InkWell(
+                                        focusColor: const Color(0x168888FF),
+                                        highlightColor: const Color(0x128888FF),
+                                        hoverColor: const Color(0x128888FF),
+                                        splashColor: const Color(0x128888FF),
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        onTap: () {
+                                          Navigator.of(
+                                            context,
+                                            rootNavigator: true,
+                                          ).pop(place);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Text(place.formattedAddress),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            } else {
+                              return const Text("Error");
+                            }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
