@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import './db.dart';
-import 'models/waypoint.dart';
 
 class FullWaypointId {
   const FullWaypointId({
