@@ -528,7 +528,10 @@ class _AddressModalState extends State<AddressModal> {
                         });
                       },
                       decoration: _waypointEditorInputDecoration.copyWith(
-                          labelText: "Street Address"),
+                        labelText: "Street Address",
+                        hintText:
+                            "Type a street address here and press Enter...",
+                      ),
                     ),
                   ),
                   Expanded(
