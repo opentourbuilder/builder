@@ -37,4 +37,13 @@ var themeData = ThemeData(
     ),
   ),
   colorScheme: colorScheme,
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(3.0)),
+      gapPadding: 2.0,
+    ),
+    floatingLabelBehavior: FloatingLabelBehavior.always,
+    floatingLabelAlignment: FloatingLabelAlignment.start,
+    isDense: true,
+  ),
 );

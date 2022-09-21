@@ -21,45 +21,46 @@ class FullWaypointId {
       other.waypointId == waypointId;
 }
 
-abstract class DbObject<I, D> {
-  DbObject(DbObjectInfo<I, D, DbObject<I, D>> info)
-      : info = WeakReference(info);
+abstract class DbObject<Id, D, Info extends DbObjectInfo<Id, D, Info>> {
+  DbObject(Info info) : _infoRef = WeakReference(info);
 
-  final WeakReference<DbObjectInfo<I, D, DbObject<I, D>>> info;
+  final WeakReference<Info> _infoRef;
+
+  Info? get info => _infoRef.target;
 
   void listen(VoidCallback callback) {
-    info.target?.listen(this, callback);
+    info?.listen(this, callback);
   }
 
   void cancel() {
-    info.target?.cancel(this);
+    info?.cancel(this);
   }
 
   @protected
   void notify() {
-    info.target?.notify(this);
+    info?.notify(this);
   }
 }
 
-abstract class DbObjectInfo<I, D, O extends DbObject<I, D>> {
+abstract class DbObjectInfo<Id, D, Self extends DbObjectInfo<Id, D, Self>> {
   DbObjectInfo({
     required this.id,
     required this.data,
   });
 
-  final I id;
+  final Id id;
   final D data;
-  final Map<O, VoidCallback> listeners = {};
+  final Map<Object, VoidCallback> listeners = {};
 
   bool deleted = false;
 
-  void listen(O key, VoidCallback callback) {
+  void listen(Object key, VoidCallback callback) {
     if (deleted) return;
 
     listeners[key] = callback;
   }
 
-  void cancel(O key) {
+  void cancel(Object key) {
     if (deleted) return;
 
     listeners.remove(key);
@@ -69,13 +70,11 @@ abstract class DbObjectInfo<I, D, O extends DbObject<I, D>> {
     }
   }
 
-  void notify(O sender) {
+  void notify(Object sender) {
     for (var listener in listeners.entries) {
       if (!identical(sender, listener.key)) {
         listener.value();
       }
     }
   }
-
-  Future<void> persist();
 }

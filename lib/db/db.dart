@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart' as uuid_lib;
 
 import './db_object.dart';
+import 'models/gallery.dart';
 import 'models/tour.dart';
 import 'models/waypoint.dart';
 
@@ -108,6 +109,19 @@ class EvresiDatabase {
     } else {
       return null;
     }
+  }
+
+  Future<DbGallery?> gallery(Uuid itemId) async {
+    var id = GalleryId(itemId);
+
+    DbGalleryInfo? info = dbObjects[id] as DbGalleryInfo?;
+    if (!dbObjects.containsKey(id)) {
+      info = await DbGalleryInfo.load(id);
+
+      if (info != null) dbObjects[id] = info;
+    }
+
+    return info != null ? DbGallery(info) : null;
   }
 
   Future<void> _initCurrentRevision() async {
@@ -342,8 +356,7 @@ const _sqlOnCreate = """
   CREATE TABLE IF NOT EXISTS $symGallery (
      $symItem BLOB NOT NULL,
      $symPath TEXT NOT NULL,
-     $symOrder INTEGER NOT NULL,
-    PRIMARY KEY ($symItem)
+     $symOrder INTEGER NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS $symPoi (

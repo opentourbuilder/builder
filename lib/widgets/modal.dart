@@ -20,6 +20,7 @@ class Modal extends StatelessWidget {
       borderRadius: BorderRadius.circular(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Material(
             type: MaterialType.card,

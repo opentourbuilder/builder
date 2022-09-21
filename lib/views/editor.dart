@@ -90,6 +90,13 @@ class _SidebarState extends State<Sidebar> {
                   EvresiPageRoute((context) => const Home()),
                 ),
               ),
+              _SidebarItem(
+                "Assets",
+                leading: const Icon(Icons.description),
+                onTap: () => widget.navKey.currentState?.push(
+                  EvresiPageRoute((context) => const Home()),
+                ),
+              ),
               const _SidebarHeader("Tours"),
               for (var item in _tours)
                 _SidebarItem(
@@ -101,7 +108,7 @@ class _SidebarState extends State<Sidebar> {
                   ),
                 ),
               _SidebarItem(
-                "New Tour",
+                "Create Tour",
                 leading: const Icon(Icons.add),
                 onTap: () {
                   instance.createTour(Tour(name: "New tour", desc: ""));

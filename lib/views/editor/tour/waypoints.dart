@@ -203,13 +203,9 @@ class _WaypointState extends State<_Waypoint> {
 }
 
 const _waypointEditorInputDecoration = InputDecoration(
-  border: OutlineInputBorder(),
   filled: true,
   fillColor: Color(0xFFFFFFFF),
   hoverColor: Color(0xFFFFFFFF),
-  floatingLabelBehavior: FloatingLabelBehavior.always,
-  floatingLabelAlignment: FloatingLabelAlignment.start,
-  isDense: true,
 );
 
 class _WaypointEditor extends StatefulWidget {

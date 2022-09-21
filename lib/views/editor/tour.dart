@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '/db/db.dart' as db;
 import '/db/models/tour.dart';
 import '/models/editor/tour.dart';
+import '/widgets/gallery_editor/gallery_editor.dart';
 import 'tour/map.dart';
 import 'tour/waypoints.dart';
 
@@ -123,13 +124,6 @@ class _TourContentEditorState extends State<_TourContentEditor> {
       throw Exception("Error: loaded tour is null");
     }
 
-    const inputDecoration = InputDecoration(
-      border: OutlineInputBorder(),
-      floatingLabelBehavior: FloatingLabelBehavior.always,
-      floatingLabelAlignment: FloatingLabelAlignment.start,
-      isDense: true,
-    );
-
     return DefaultTabController(
       length: 2,
       child: Container(
@@ -150,7 +144,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                             _tour?.name = value;
                           }
                         : null,
-                    decoration: inputDecoration.copyWith(labelText: "Title"),
+                    decoration: const InputDecoration(labelText: "Title"),
                   ),
                   const SizedBox(height: 16.0),
                   TextField(
@@ -165,9 +159,10 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                             _tour?.desc = value;
                           }
                         : null,
-                    decoration:
-                        inputDecoration.copyWith(labelText: "Description"),
+                    decoration: const InputDecoration(labelText: "Description"),
                   ),
+                  const SizedBox(height: 16.0),
+                  GalleryEditor(itemId: widget.tourId),
                 ],
               ),
             ),

@@ -69,7 +69,7 @@ class Tour {
   }
 }
 
-class DbTourInfo extends DbObjectInfo<Uuid, Tour, DbTour> {
+class DbTourInfo extends DbObjectInfo<Uuid, Tour, DbTourInfo> {
   DbTourInfo({required super.id, required super.data});
 
   static Future<DbTourInfo> create(Tour data) async {
@@ -84,28 +84,27 @@ class DbTourInfo extends DbObjectInfo<Uuid, Tour, DbTour> {
     return data != null ? DbTourInfo(id: id, data: data) : null;
   }
 
-  @override
   Future<void> persist() async {
     data.update(instance, id);
   }
 }
 
-class DbTour extends DbObject<Uuid, Tour> {
+class DbTour extends DbObject<Uuid, Tour, DbTourInfo> {
   DbTour(DbTourInfo info) : super(info);
 
-  String get name => info.target!.data.name;
+  String get name => info!.data.name;
   set name(String value) {
-    info.target!.data.name = value;
+    info!.data.name = value;
     _changed();
   }
 
-  String get desc => info.target!.data.desc;
+  String get desc => info!.data.desc;
   set desc(String value) {
-    info.target!.data.desc = value;
+    info!.data.desc = value;
     _changed();
   }
 
   void _changed() {
-    info.target!.persist().then((_) => notify());
+    info!.persist().then((_) => notify());
   }
 }

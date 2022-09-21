@@ -89,7 +89,7 @@ class Waypoint {
 }
 
 class DbWaypointInfo
-    extends DbObjectInfo<FullWaypointId, Waypoint, DbWaypoint> {
+    extends DbObjectInfo<FullWaypointId, Waypoint, DbWaypointInfo> {
   DbWaypointInfo({required super.id, required super.data});
 
   static Future<DbWaypointInfo> create(Uuid tourId, Waypoint data) async {
@@ -105,46 +105,45 @@ class DbWaypointInfo
     return data != null ? DbWaypointInfo(id: id, data: data) : null;
   }
 
-  @override
   Future<void> persist() async {
     data.update(instance, id.tourId, id.waypointId);
   }
 }
 
-class DbWaypoint extends DbObject<FullWaypointId, Waypoint> {
+class DbWaypoint extends DbObject<FullWaypointId, Waypoint, DbWaypointInfo> {
   DbWaypoint(DbWaypointInfo info) : super(info);
 
-  String? get name => info.target!.data.name;
+  String? get name => info!.data.name;
   set name(String? value) {
-    info.target!.data.name = value;
+    info!.data.name = value;
     _changed();
   }
 
-  String? get desc => info.target!.data.desc;
+  String? get desc => info!.data.desc;
   set desc(String? value) {
-    info.target!.data.desc = value;
+    info!.data.desc = value;
     _changed();
   }
 
-  double get lat => info.target!.data.lat;
+  double get lat => info!.data.lat;
   set lat(double value) {
-    info.target!.data.lat = value;
+    info!.data.lat = value;
     _changed();
   }
 
-  double get lng => info.target!.data.lng;
+  double get lng => info!.data.lng;
   set lng(double value) {
-    info.target!.data.lng = value;
+    info!.data.lng = value;
     _changed();
   }
 
-  String? get narrationPath => info.target!.data.narrationPath;
+  String? get narrationPath => info!.data.narrationPath;
   set narrationPath(String? value) {
-    info.target!.data.narrationPath = value;
+    info!.data.narrationPath = value;
     _changed();
   }
 
   void _changed() {
-    info.target!.persist().then((_) => notify());
+    info!.persist().then((_) => notify());
   }
 }
