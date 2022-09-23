@@ -17,94 +17,94 @@ class Tour {
 
   String name;
   String desc;
+}
 
-  static Future<Tour?> load(EvresiDatabase db, Uuid tourId) async {
-    var rows = await db.db.query(
-      symTour,
-      columns: [symName, symDesc],
-      where: "$symId = ?",
-      whereArgs: [tourId.bytes],
-    );
-
-    return rows.isEmpty ? null : Tour._fromRow(rows[0]);
-  }
-
-  Future<void> update(EvresiDatabase db, Uuid tourId) async {
-    await db.db.update(
-      symTour,
-      {
-        ..._toRow(),
-        symRevision: db.currentRevision.bytes,
-      },
-      where: "$symId = ?",
-      whereArgs: [tourId.bytes],
-    );
-
-    // in case the tour name was changed
-    db.requestEvent(const ToursEventDescriptor());
-  }
-
-  Future<Uuid> create(EvresiDatabase db) async {
+mixin EvresiDatabaseTourMixin on EvresiDatabaseBase {
+  Future<DbTour> createTour(Tour data) async {
     var id = Uuid.v4();
 
-    await db.db.insert(symTour, {
+    await instance.db.insert(symTour, {
       symId: id.bytes,
-      symName: name,
-      symDesc: desc,
-      symRevision: db.currentRevision.bytes,
-      symCreated: db.currentRevision.bytes,
+      symName: data.name,
+      symDesc: data.desc,
+      symRevision: instance.currentRevision.bytes,
+      symCreated: instance.currentRevision.bytes,
     });
 
-    db.requestEvent(const ToursEventDescriptor());
+    instance.requestEvent(const ToursEventDescriptor());
 
-    return id;
+    var state = DbObjectState(id, data);
+    dbObjects[id] = state;
+
+    return DbTour._(state);
   }
 
-  static Future<void> delete(EvresiDatabase db, Uuid tourId) async {
-    await db.db.delete(
+  Future<DbTour?> tour(Uuid id) async {
+    return load<DbTour, Uuid, Tour>(
+      id: id,
+      load: () async {
+        var rows = await instance.db.query(
+          symTour,
+          columns: [symName, symDesc],
+          where: "$symId = ?",
+          whereArgs: [id.bytes],
+        );
+        return rows.isEmpty ? null : Tour._fromRow(rows[0]);
+      },
+      createObject: (state) => DbTour._(state),
+    );
+  }
+
+  Future<void> deleteTour(Uuid tourId) async {
+    dbObjects.remove(tourId);
+
+    await instance.db.delete(
       symTour,
       where: "$symId = ?",
       whereArgs: [tourId],
     );
+
+    requestEvent(const ToursEventDescriptor());
   }
 }
 
-class DbTourInfo extends DbObjectInfo<Uuid, Tour, DbTourInfo> {
-  DbTourInfo({required super.id, required super.data});
-
-  static Future<DbTourInfo> create(Tour data) async {
-    var id = await data.create(instance);
-
-    return DbTourInfo(id: id, data: data);
-  }
-
-  static Future<DbTourInfo?> load(Uuid id) async {
-    var data = await Tour.load(instance, id);
-
-    return data != null ? DbTourInfo(id: id, data: data) : null;
-  }
-
-  Future<void> persist() async {
-    data.update(instance, id);
-  }
+class DbTour extends DbObject<DbTourAccessor, Uuid, Tour> {
+  DbTour._(DbObjectState<Uuid, Tour> state)
+      : super((self) => DbTourAccessor(self), state);
 }
 
-class DbTour extends DbObject<Uuid, Tour, DbTourInfo> {
-  DbTour(DbTourInfo info) : super(info);
+class DbTourAccessor {
+  DbTourAccessor(this.object);
 
-  String get name => info!.data.name;
+  final DbObject<DbTourAccessor, Uuid, Tour> object;
+  late final DbObjectState<Uuid, Tour> state = object.state!;
+
+  String get name => state.data.name;
   set name(String value) {
-    info!.data.name = value;
+    state.data.name = value;
     _changed();
   }
 
-  String get desc => info!.data.desc;
+  String get desc => state.data.desc;
   set desc(String value) {
-    info!.data.desc = value;
+    state.data.desc = value;
     _changed();
   }
 
-  void _changed() {
-    info!.persist().then((_) => notify());
+  void _changed() async {
+    await instance.db.update(
+      symTour,
+      {
+        ...state.data._toRow(),
+        symRevision: instance.currentRevision.bytes,
+      },
+      where: "$symId = ?",
+      whereArgs: [state.id.bytes],
+    );
+
+    // in case the tour name was changed
+    instance.requestEvent(const ToursEventDescriptor());
+
+    state.notify(object);
   }
 }

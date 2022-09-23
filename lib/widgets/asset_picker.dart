@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-import '/asset_db/asset_db.dart' as asset_db;
+import '/asset_db/asset_db.dart';
 
 class AssetPicker extends StatefulWidget {
   const AssetPicker({
@@ -13,8 +13,8 @@ class AssetPicker extends StatefulWidget {
   });
 
   final String? selectedAssetName;
-  final void Function(asset_db.Asset) onAssetSelected;
-  final asset_db.AssetType? type;
+  final void Function(Asset) onAssetSelected;
+  final AssetType? type;
 
   @override
   State<AssetPicker> createState() => _AssetPickerState();
@@ -33,7 +33,7 @@ class _AssetPickerState extends State<AssetPicker> {
         children: [
           Expanded(
             child: LayoutBuilder(builder: (context, constraints) {
-              return RawAutocomplete<asset_db.Asset>(
+              return RawAutocomplete<Asset>(
                 initialValue:
                     TextEditingValue(text: widget.selectedAssetName ?? ""),
                 displayStringForOption: (asset) => asset.name,
@@ -55,7 +55,7 @@ class _AssetPickerState extends State<AssetPicker> {
                     onSubmitted: (_) => onFieldSubmitted(),
                   );
                 },
-                optionsBuilder: (value) => asset_db.instance.list(value.text),
+                optionsBuilder: (value) => assetDbInstance.list(value.text),
                 onSelected: widget.onAssetSelected,
               );
             }),
@@ -113,8 +113,8 @@ class _AssetPickerState extends State<AssetPicker> {
 
   Widget _autocompleteOptionsBuilder(
       BuildContext context,
-      void Function(asset_db.Asset) onSelected,
-      Iterable<asset_db.Asset> options,
+      void Function(Asset) onSelected,
+      Iterable<Asset> options,
       double maxWidth) {
     int highlighted = AutocompleteHighlightedOption.of(context);
 
@@ -143,13 +143,13 @@ class _AssetPickerState extends State<AssetPicker> {
                       : null,
                   child: Row(
                     children: [
-                      if (option.value.type == asset_db.AssetType.image)
+                      if (option.value.type == AssetType.image)
                         Icon(
                           Icons.image,
                           color:
                               option.key == highlighted ? Colors.white : null,
                         ),
-                      if (option.value.type == asset_db.AssetType.narration)
+                      if (option.value.type == AssetType.narration)
                         Icon(
                           Icons.mic,
                           color:
@@ -176,14 +176,13 @@ class _AssetPickerState extends State<AssetPicker> {
 
   void _addNewAsset() async {
     var pickResult = await FilePicker.platform.pickFiles(allowedExtensions: [
-      ...asset_db.AssetType.extensionMap.keys
-          .map((e) => e.replaceFirst(r"\.", ""))
+      ...AssetType.extensionMap.keys.map((e) => e.replaceFirst(r"\.", ""))
     ]);
 
     var path = pickResult?.files.single.path;
 
     if (path != null) {
-      var type = asset_db.AssetType.extensionMap[p.extension(path)];
+      var type = AssetType.extensionMap[p.extension(path)];
       if (type == null || widget.type != null && type != widget.type) {
         await showDialog<void>(
           context: context,
@@ -229,14 +228,14 @@ class _AssetPickerState extends State<AssetPicker> {
       return;
     }
 
-    if (await asset_db.instance.asset(name) != null) {
+    if (await assetDbInstance.asset(name) != null) {
       setState(() {
         newAssetError = "Asset with that name already exists.";
       });
       return;
     }
 
-    await asset_db.instance.add(name, path);
+    await assetDbInstance.add(name, path);
 
     setState(() {
       newAssetPath = null;

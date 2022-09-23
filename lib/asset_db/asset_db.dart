@@ -14,7 +14,7 @@ Future<void> initAssetDatabase() async {
   _db = AssetDb(assetsPath);
 }
 
-AssetDb get instance => _db;
+AssetDb get assetDbInstance => _db;
 
 enum AssetType {
   image,

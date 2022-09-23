@@ -1,5 +1,24 @@
 import '../db.dart';
 
+class WaypointId {
+  const WaypointId({
+    required this.tourId,
+    required this.waypointId,
+  });
+
+  final Uuid tourId;
+  final Uuid waypointId;
+
+  @override
+  int get hashCode => Object.hash(tourId, waypointId);
+
+  @override
+  operator ==(Object other) =>
+      other is WaypointId &&
+      other.tourId == tourId &&
+      other.waypointId == waypointId;
+}
+
 class Waypoint {
   Waypoint({
     required this.name,
@@ -29,121 +48,119 @@ class Waypoint {
   double lat;
   double lng;
   String? narrationPath;
+}
 
-  static Future<Waypoint?> load(
-      EvresiDatabase db, Uuid tourId, Uuid waypointId) async {
-    var rows = await db.db.query(
-      symWaypoint,
-      columns: [symName, symDesc, symLat, symLng, symNarrationPath],
-      where: "$symId = ?",
-      whereArgs: [waypointId.bytes],
-    );
-
-    return rows.isEmpty ? null : Waypoint._fromRow(rows[0]);
-  }
-
-  Future<Uuid> create(EvresiDatabase db, Uuid tourId) async {
-    var id = Uuid.v4();
+mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
+  Future<DbWaypoint> createWaypoint(Uuid tourId, Waypoint data) async {
+    var waypointId = Uuid.v4();
 
     // insert it with invalid order
-    await db.db.insert(symWaypoint, {
-      symId: id.bytes,
+    await db.insert(symWaypoint, {
+      symId: waypointId.bytes,
       symTour: tourId.bytes,
       symOrder: null,
-      symName: name,
-      symDesc: desc,
-      symLat: lat,
-      symLng: lng,
+      symName: data.name,
+      symDesc: data.desc,
+      symLat: data.lat,
+      symLng: data.lng,
       symNarrationPath: symNarrationPath,
-      symRevision: db.currentRevision.bytes,
-      symCreated: db.currentRevision.bytes,
+      symRevision: currentRevision.bytes,
+      symCreated: currentRevision.bytes,
     });
 
-    db.requestEvent(WaypointsEventDescriptor(tourId: tourId));
+    requestEvent(WaypointsEventDescriptor(tourId: tourId));
 
-    return id;
+    var id = WaypointId(tourId: tourId, waypointId: waypointId);
+
+    var state = DbObjectState(id, data);
+    dbObjects[id] = state;
+
+    return DbWaypoint._(state);
   }
 
-  Future<void> update(EvresiDatabase db, Uuid tourId, Uuid waypointId) async {
-    await db.db.update(
+  Future<DbWaypoint?> waypoint(Uuid tourId, Uuid waypointId) async {
+    return load<DbWaypoint, WaypointId, Waypoint>(
+      id: WaypointId(tourId: tourId, waypointId: waypointId),
+      load: () async {
+        var rows = await instance.db.query(
+          symWaypoint,
+          columns: [symName, symDesc, symLat, symLng, symNarrationPath],
+          where: "$symId = ?",
+          whereArgs: [waypointId.bytes],
+        );
+        return rows.isEmpty ? null : Waypoint._fromRow(rows[0]);
+      },
+      createObject: (state) => DbWaypoint._(state),
+    );
+  }
+
+  Future<void> deleteWaypoint(Uuid tourId, Uuid waypointId) async {
+    dbObjects.remove(WaypointId(tourId: tourId, waypointId: waypointId));
+
+    await db.delete(
+      symWaypoint,
+      where: "$symTour = ? AND $symId = ?",
+      whereArgs: [tourId.bytes, waypointId.bytes],
+    );
+
+    requestEvent(WaypointsEventDescriptor(tourId: tourId));
+  }
+}
+
+class DbWaypoint extends DbObject<DbWaypointAccessor, WaypointId, Waypoint> {
+  DbWaypoint._(DbObjectState<WaypointId, Waypoint> state)
+      : super((self) => DbWaypointAccessor(self), state);
+}
+
+class DbWaypointAccessor {
+  DbWaypointAccessor(this.object);
+
+  final DbObject<DbWaypointAccessor, WaypointId, Waypoint> object;
+  late final DbObjectState<WaypointId, Waypoint> state = object.state!;
+
+  String? get name => state.data.name;
+  set name(String? value) {
+    state.data.name = value;
+    _changed();
+  }
+
+  String? get desc => state.data.desc;
+  set desc(String? value) {
+    state.data.desc = value;
+    _changed();
+  }
+
+  double get lat => state.data.lat;
+  set lat(double value) {
+    state.data.lat = value;
+    _changed();
+  }
+
+  double get lng => state.data.lng;
+  set lng(double value) {
+    state.data.lng = value;
+    _changed();
+  }
+
+  String? get narrationPath => state.data.narrationPath;
+  set narrationPath(String? value) {
+    state.data.narrationPath = value;
+    _changed();
+  }
+
+  void _changed() async {
+    await instance.db.update(
       symWaypoint,
       {
-        ..._toRow(),
-        symRevision: db.currentRevision.bytes,
+        ...state.data._toRow(),
+        symRevision: instance.currentRevision.bytes,
       },
       where: "$symTour = ? AND $symId = ?",
-      whereArgs: [tourId.bytes, waypointId.bytes],
+      whereArgs: [state.id.tourId.bytes, state.id.waypointId.bytes],
     );
 
-    db.requestEvent(WaypointsEventDescriptor(tourId: tourId));
-  }
+    instance.requestEvent(WaypointsEventDescriptor(tourId: state.id.tourId));
 
-  static Future<void> delete(
-      EvresiDatabase db, Uuid tourId, Uuid waypointId) async {
-    await db.db.delete(
-      symWaypoint,
-      where: "$symTour = ? AND $symId = ?",
-      whereArgs: [tourId.bytes, waypointId.bytes],
-    );
-  }
-}
-
-class DbWaypointInfo
-    extends DbObjectInfo<FullWaypointId, Waypoint, DbWaypointInfo> {
-  DbWaypointInfo({required super.id, required super.data});
-
-  static Future<DbWaypointInfo> create(Uuid tourId, Waypoint data) async {
-    var waypointId = await data.create(instance, tourId);
-    var id = FullWaypointId(tourId: tourId, waypointId: waypointId);
-
-    return DbWaypointInfo(id: id, data: data);
-  }
-
-  static Future<DbWaypointInfo?> load(FullWaypointId id) async {
-    var data = await Waypoint.load(instance, id.tourId, id.waypointId);
-
-    return data != null ? DbWaypointInfo(id: id, data: data) : null;
-  }
-
-  Future<void> persist() async {
-    data.update(instance, id.tourId, id.waypointId);
-  }
-}
-
-class DbWaypoint extends DbObject<FullWaypointId, Waypoint, DbWaypointInfo> {
-  DbWaypoint(DbWaypointInfo info) : super(info);
-
-  String? get name => info!.data.name;
-  set name(String? value) {
-    info!.data.name = value;
-    _changed();
-  }
-
-  String? get desc => info!.data.desc;
-  set desc(String? value) {
-    info!.data.desc = value;
-    _changed();
-  }
-
-  double get lat => info!.data.lat;
-  set lat(double value) {
-    info!.data.lat = value;
-    _changed();
-  }
-
-  double get lng => info!.data.lng;
-  set lng(double value) {
-    info!.data.lng = value;
-    _changed();
-  }
-
-  String? get narrationPath => info!.data.narrationPath;
-  set narrationPath(String? value) {
-    info!.data.narrationPath = value;
-    _changed();
-  }
-
-  void _changed() {
-    info!.persist().then((_) => notify());
+    state.notify(object);
   }
 }

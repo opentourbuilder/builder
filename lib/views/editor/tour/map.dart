@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
-import '/models/editor/tour.dart';
 import '/router.dart';
 
 class TourMap extends StatefulWidget {
@@ -104,8 +102,9 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                 onDragEnd: (details, point) {
                   db.instance.waypoint(widget.tourId, waypoint.value.id).then(
                     (loadedWaypoint) {
-                      loadedWaypoint?.lat = point.latitude;
-                      loadedWaypoint?.lng = point.longitude;
+                      loadedWaypoint?.data?.lat = point.latitude;
+                      loadedWaypoint?.data?.lng = point.longitude;
+                      loadedWaypoint?.dispose();
                     },
                   );
                 },

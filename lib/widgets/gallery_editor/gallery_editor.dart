@@ -4,7 +4,7 @@ import 'package:builder/widgets/gallery_editor/gallery_image_modal.dart';
 import 'package:flutter/material.dart';
 
 import '/db/db.dart' as db;
-import '/asset_db/asset_db.dart' as asset_db;
+import '/asset_db/asset_db.dart';
 import '/db/models/gallery.dart';
 
 class GalleryEditor extends StatefulWidget {
@@ -43,8 +43,14 @@ class _GalleryEditorState extends State<GalleryEditor> {
   }
 
   @override
+  void dispose() {
+    gallery?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var itemCount = gallery != null ? gallery!.length + 1 : 0;
+    var itemCount = gallery != null ? gallery!.data!.length + 1 : 0;
     return SizedBox(
       height: 64,
       child: Scrollbar(
@@ -61,24 +67,23 @@ class _GalleryEditorState extends State<GalleryEditor> {
                 margin: const EdgeInsets.only(right: 8.0),
                 child: InkWell(
                   onTap: () async {
-                    var result =
-                        await Navigator.of(context, rootNavigator: true)
-                            .push(GalleryImageModalRoute(gallery![index]));
+                    var result = await Navigator.of(context,
+                            rootNavigator: true)
+                        .push(GalleryImageModalRoute(gallery!.data![index]));
 
                     if (result is GalleryImageModalResultUpdated) {
-                      setState(() => gallery![index] = result.asset.name);
+                      setState(() => gallery!.data![index] = result.asset.name);
                     } else if (result is GalleryImageModalResultDeleted) {
-                      setState(() => gallery!.remove(index));
+                      setState(() => gallery!.data!.remove(index));
                     }
                   },
                   child: gallery != null
                       ? FutureBuilder(
-                          future: asset_db.instance.asset(gallery![index]),
+                          future: assetDbInstance.asset(gallery!.data![index]),
                           builder: (context, snapshot) {
                             if (snapshot.data != null) {
                               return Image.file(
-                                File((snapshot.data! as asset_db.Asset)
-                                    .fullPath),
+                                File((snapshot.data! as Asset).fullPath),
                                 fit: BoxFit.cover,
                               );
                             } else {
@@ -102,7 +107,7 @@ class _GalleryEditorState extends State<GalleryEditor> {
                                 .push(GalleryImageModalRoute(null));
 
                         if (result is GalleryImageModalResultUpdated) {
-                          setState(() => gallery!.add(result.asset.name));
+                          setState(() => gallery!.data!.add(result.asset.name));
                         }
                       },
                       iconSize: 28.0,

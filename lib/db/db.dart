@@ -27,12 +27,18 @@ Future<void> initEvresiDatabase() async {
 
 EvresiDatabase get instance => _db;
 
-class EvresiDatabase {
+class EvresiDatabase = EvresiDatabaseBase
+    with
+        EvresiDatabaseWaypointMixin,
+        EvresiDatabaseTourMixin,
+        EvresiDatabaseGalleryMixin;
+
+class EvresiDatabaseBase {
   late Database db;
 
   late Uuid currentRevision;
 
-  final Map<dynamic, DbObjectInfo> dbObjects = {};
+  final Map<dynamic, DbObjectState> dbObjects = {};
 
   final StreamController<Event> _events = StreamController.broadcast();
   Stream<Event> get events => _events.stream;
@@ -66,62 +72,25 @@ class EvresiDatabase {
     ));
   }
 
-  Future<Uuid> createTour(Tour data) async {
-    var info = await DbTourInfo.create(data);
-    dbObjects[info.id] = info;
-    return info.id;
-  }
-
-  Future<DbTour?> tour(Uuid id) async {
-    var info = dbObjects[id] as DbTourInfo?;
-    if (!dbObjects.containsKey(id)) {
-      info = await DbTourInfo.load(id);
-
-      if (info != null) dbObjects[id] = info;
-    }
-
-    if (info != null) {
-      return DbTour(info);
+  @protected
+  Future<DbObj?> load<DbObj, Id, Data>({
+    required Id id,
+    required Future<Data?> Function() load,
+    required DbObj Function(DbObjectState<Id, Data>) createObject,
+  }) async {
+    if (dbObjects.containsKey(id)) {
+      return createObject(dbObjects[id]! as DbObjectState<Id, Data>);
     } else {
-      return null;
+      var data = await load();
+
+      if (data != null) {
+        var state = DbObjectState(id, data);
+        dbObjects[id] = state;
+        return createObject(state);
+      } else {
+        return null;
+      }
     }
-  }
-
-  Future<Uuid> createWaypoint(Uuid tourId, Waypoint data) async {
-    var info = await DbWaypointInfo.create(tourId, data);
-    dbObjects[info.id] = info;
-    return info.id.waypointId;
-  }
-
-  Future<DbWaypoint?> waypoint(Uuid tourId, Uuid waypointId) async {
-    var id = FullWaypointId(tourId: tourId, waypointId: waypointId);
-    DbWaypointInfo? info;
-    if (!dbObjects.containsKey(id)) {
-      info = await DbWaypointInfo.load(id);
-
-      if (info != null) dbObjects[id] = info;
-    } else {
-      info = dbObjects[id] as DbWaypointInfo;
-    }
-
-    if (info != null) {
-      return DbWaypoint(info);
-    } else {
-      return null;
-    }
-  }
-
-  Future<DbGallery?> gallery(Uuid itemId) async {
-    var id = GalleryId(itemId);
-
-    DbGalleryInfo? info = dbObjects[id] as DbGalleryInfo?;
-    if (!dbObjects.containsKey(id)) {
-      info = await DbGalleryInfo.load(id);
-
-      if (info != null) dbObjects[id] = info;
-    }
-
-    return info != null ? DbGallery(info) : null;
   }
 
   Future<void> _initCurrentRevision() async {
@@ -191,14 +160,14 @@ class Event<D extends EventDescriptor<T>, T> {
 abstract class EventDescriptor<T> {
   const EventDescriptor();
 
-  Future<T> _observe(EvresiDatabase db);
+  Future<T> _observe(EvresiDatabaseBase db);
 }
 
 class ToursEventDescriptor extends EventDescriptor<List<TourSummary>> {
   const ToursEventDescriptor();
 
   @override
-  Future<List<TourSummary>> _observe(EvresiDatabase db) async {
+  Future<List<TourSummary>> _observe(EvresiDatabaseBase db) async {
     var rows = await db.db.query(
       symTour,
       columns: [symId, symName],
@@ -221,7 +190,7 @@ class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
   final Uuid tourId;
 
   @override
-  Future<List<PointSummary>> _observe(EvresiDatabase db) async {
+  Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
     var rows = await db.db.query(
       symWaypoint,
       columns: [symId, symOrder, symLat, symLng, symName],
@@ -245,7 +214,7 @@ class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
   const PoisEventDescriptor();
 
   @override
-  Future<List<PointSummary>> _observe(EvresiDatabase db) async {
+  Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
     var rows = await db.db.query(
       symPoi,
       columns: [symId, symLat, symLng, symName],

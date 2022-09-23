@@ -113,7 +113,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
 
   @override
   void dispose() {
-    _tour?.cancel();
+    _tour?.dispose();
     super.dispose();
   }
 
@@ -137,11 +137,11 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                   TextField(
                     enabled: _tour != null,
                     controller: _tour != null
-                        ? TextEditingController(text: _tour!.name)
+                        ? TextEditingController(text: _tour?.data?.name)
                         : null,
                     onChanged: _tour != null
                         ? (value) {
-                            _tour?.name = value;
+                            _tour?.data?.name = value;
                           }
                         : null,
                     decoration: const InputDecoration(labelText: "Title"),
@@ -152,11 +152,11 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                     maxLines: 8,
                     enabled: _tour != null,
                     controller: _tour != null
-                        ? TextEditingController(text: _tour!.desc)
+                        ? TextEditingController(text: _tour?.data?.desc)
                         : null,
                     onChanged: _tour != null
                         ? (value) {
-                            _tour?.desc = value;
+                            _tour?.data?.desc = value;
                           }
                         : null,
                     decoration: const InputDecoration(labelText: "Description"),
@@ -170,8 +170,8 @@ class _TourContentEditorState extends State<_TourContentEditor> {
               labelColor: Colors.black,
               indicatorColor: Theme.of(context).colorScheme.primary,
               tabs: const [
-                Tab(child: Text("Route")),
-                Tab(child: Text("POIs")),
+                Tab(child: Text("Waypoints")),
+                Tab(child: Text("Points of Interest")),
               ],
             ),
             Expanded(

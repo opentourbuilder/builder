@@ -94,6 +94,7 @@ class _WaypointListState extends State<_WaypointList> {
             key: ValueKey(_waypoints[index].id),
             index: index,
             onTap: () => widget.selectWaypoint(_waypoints[index].id),
+            tourId: widget.tourId,
             summary: _waypoints[index],
           );
         } else {
@@ -105,7 +106,7 @@ class _WaypointListState extends State<_WaypointList> {
                   db.instance.createWaypoint(
                     widget.tourId,
                     Waypoint(
-                      name: "New waypoint",
+                      name: "Untitled",
                       desc: "",
                       lat: 0,
                       lng: 0,
@@ -133,11 +134,13 @@ class _Waypoint extends StatefulWidget {
   const _Waypoint({
     Key? key,
     required this.index,
+    required this.tourId,
     required this.summary,
     required this.onTap,
   }) : super(key: key);
 
   final int index;
+  final db.Uuid tourId;
   final db.PointSummary summary;
   final void Function() onTap;
 
@@ -190,6 +193,17 @@ class _WaypointState extends State<_Waypoint> {
                 splashColor: const Color(0x08000088),
                 constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
                 onPressed: () {
+                  db.instance.deleteWaypoint(widget.tourId, widget.summary.id);
+                },
+                child: const Icon(Icons.delete),
+              ),
+              RawMaterialButton(
+                focusColor: const Color(0x10000088),
+                highlightColor: const Color(0x08000088),
+                hoverColor: const Color(0x08000088),
+                splashColor: const Color(0x08000088),
+                constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
+                onPressed: () {
                   widget.onTap();
                 },
                 child: const Icon(Icons.edit),
@@ -228,7 +242,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
 
   @override
   void dispose() {
-    waypoint?.cancel();
+    waypoint?.dispose();
     super.dispose();
   }
 
@@ -239,7 +253,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
     if (widget.selectedWaypoint != waypointId) {
       waypointId = widget.selectedWaypoint;
 
-      waypoint?.cancel();
+      waypoint?.dispose();
       waypoint = null;
       if (waypointId != null) {
         db.instance.waypoint(tourEditorModel.tourId, waypointId!).then((value) {
@@ -267,10 +281,10 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                     TextField(
                       decoration: _waypointEditorInputDecoration.copyWith(
                           labelText: "Title"),
-                      controller:
-                          TextEditingController(text: waypoint?.name ?? ""),
+                      controller: TextEditingController(
+                          text: waypoint?.data?.name ?? ""),
                       onChanged: (name) {
-                        waypoint!.name = name;
+                        waypoint!.data!.name = name;
                       },
                     ),
                     const SizedBox(height: 16.0),
@@ -279,10 +293,10 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                           labelText: "Description"),
                       minLines: 4,
                       maxLines: 4,
-                      controller:
-                          TextEditingController(text: waypoint?.desc ?? ""),
+                      controller: TextEditingController(
+                          text: waypoint?.data?.desc ?? ""),
                       onChanged: (desc) {
-                        waypoint!.desc = desc;
+                        waypoint!.data!.desc = desc;
                       },
                     ),
                     const SizedBox(height: 16.0),
@@ -353,7 +367,7 @@ class _LocationFieldState extends State<LocationField> {
       setState(() {
         if (newLat != null && newLat >= -90 && newLat <= 90) {
           lat = newLat;
-          widget.waypoint?.lat = newLat;
+          widget.waypoint?.data?.lat = newLat;
           latBad = false;
         } else {
           latBad = true;
@@ -376,7 +390,7 @@ class _LocationFieldState extends State<LocationField> {
       setState(() {
         if (newLng != null && newLng >= -180 && newLng <= 180) {
           lng = newLng;
-          widget.waypoint?.lng = newLng;
+          widget.waypoint?.data?.lng = newLng;
           lngBad = false;
         } else {
           lngBad = true;
@@ -384,8 +398,8 @@ class _LocationFieldState extends State<LocationField> {
       });
     });
 
-    lat = widget.waypoint?.lat ?? 0;
-    lng = widget.waypoint?.lng ?? 0;
+    lat = widget.waypoint?.data?.lat ?? 0;
+    lng = widget.waypoint?.data?.lng ?? 0;
     latController.text = '$lat';
     lngController.text = '$lng';
   }
@@ -394,8 +408,8 @@ class _LocationFieldState extends State<LocationField> {
   void didUpdateWidget(covariant LocationField oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    lat = widget.waypoint?.lat ?? 0;
-    lng = widget.waypoint?.lng ?? 0;
+    lat = widget.waypoint?.data?.lat ?? 0;
+    lng = widget.waypoint?.data?.lng ?? 0;
     latController.text = '$lat';
     lngController.text = '$lng';
   }
@@ -443,9 +457,9 @@ class _LocationFieldState extends State<LocationField> {
             if (place != null) {
               setState(() {
                 lat = place.lat;
-                widget.waypoint?.lat = place.lat;
+                widget.waypoint?.data?.lat = place.lat;
                 lng = place.lng;
-                widget.waypoint?.lng = place.lng;
+                widget.waypoint?.data?.lng = place.lng;
                 latController.text = '$lat';
                 lngController.text = '$lng';
               });

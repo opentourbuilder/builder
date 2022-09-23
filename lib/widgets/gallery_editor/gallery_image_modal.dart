@@ -3,7 +3,7 @@ import 'dart:io';
 import '/widgets/asset_picker.dart';
 import 'package:flutter/material.dart';
 
-import '/asset_db/asset_db.dart' as asset_db;
+import '/asset_db/asset_db.dart';
 import '../modal.dart';
 
 abstract class GalleryImageModalResult {
@@ -13,7 +13,7 @@ abstract class GalleryImageModalResult {
 class GalleryImageModalResultUpdated extends GalleryImageModalResult {
   const GalleryImageModalResultUpdated(this.asset);
 
-  final asset_db.Asset asset;
+  final Asset asset;
 }
 
 class GalleryImageModalResultDeleted extends GalleryImageModalResult {
@@ -64,14 +64,14 @@ class GalleryImageModal extends StatefulWidget {
 }
 
 class _GalleryImageModalState extends State<GalleryImageModal> {
-  asset_db.Asset? selectedAsset;
+  Asset? selectedAsset;
 
   @override
   void initState() {
     super.initState();
 
     if (widget.currentAsset != null) {
-      asset_db.instance
+      assetDbInstance
           .asset(widget.currentAsset!)
           .then((currentAsset) => setState(() => selectedAsset = currentAsset));
     }
@@ -114,7 +114,7 @@ class _GalleryImageModalState extends State<GalleryImageModal> {
                     ),
                   if (selectedAssetFile != null) const SizedBox(height: 16.0),
                   AssetPicker(
-                    type: asset_db.AssetType.image,
+                    type: AssetType.image,
                     selectedAssetName: widget.currentAsset,
                     onAssetSelected: (asset) {
                       setState(() {
