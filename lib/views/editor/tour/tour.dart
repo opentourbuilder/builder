@@ -5,8 +5,8 @@ import '/db/db.dart' as db;
 import '/db/models/tour.dart';
 import '/models/editor/tour.dart';
 import '/widgets/gallery_editor/gallery_editor.dart';
-import 'tour/map.dart';
-import 'tour/waypoints.dart';
+import 'map.dart';
+import 'waypoints.dart';
 
 class TourEditor extends StatefulWidget {
   const TourEditor({Key? key, required this.tourId}) : super(key: key);
