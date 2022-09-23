@@ -124,66 +124,56 @@ class _TourContentEditorState extends State<_TourContentEditor> {
       throw Exception("Error: loaded tour is null");
     }
 
-    return DefaultTabController(
-      length: 2,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    enabled: _tour != null,
-                    controller: _tour != null
-                        ? TextEditingController(text: _tour?.data?.name)
-                        : null,
-                    onChanged: _tour != null
-                        ? (value) {
-                            _tour?.data?.name = value;
-                          }
-                        : null,
-                    decoration: const InputDecoration(labelText: "Title"),
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextField(
-                    minLines: 8,
-                    maxLines: 8,
-                    enabled: _tour != null,
-                    controller: _tour != null
-                        ? TextEditingController(text: _tour?.data?.desc)
-                        : null,
-                    onChanged: _tour != null
-                        ? (value) {
-                            _tour?.data?.desc = value;
-                          }
-                        : null,
-                    decoration: const InputDecoration(labelText: "Description"),
-                  ),
-                  const SizedBox(height: 16.0),
-                  GalleryEditor(itemId: widget.tourId),
-                ],
-              ),
-            ),
-            TabBar(
-              labelColor: Colors.black,
-              indicatorColor: Theme.of(context).colorScheme.primary,
-              tabs: const [
-                Tab(child: Text("Waypoints")),
-                Tab(child: Text("Points of Interest")),
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  enabled: _tour != null,
+                  controller: _tour != null
+                      ? TextEditingController(text: _tour?.data?.name)
+                      : null,
+                  onChanged: _tour != null
+                      ? (value) {
+                          _tour?.data?.name = value;
+                        }
+                      : null,
+                  decoration: const InputDecoration(labelText: "Title"),
+                ),
+                const SizedBox(height: 16.0),
+                TextField(
+                  minLines: 8,
+                  maxLines: 8,
+                  enabled: _tour != null,
+                  controller: _tour != null
+                      ? TextEditingController(text: _tour?.data?.desc)
+                      : null,
+                  onChanged: _tour != null
+                      ? (value) {
+                          _tour?.data?.desc = value;
+                        }
+                      : null,
+                  decoration: const InputDecoration(labelText: "Description"),
+                ),
+                const SizedBox(height: 16.0),
+                GalleryEditor(itemId: widget.tourId),
               ],
             ),
-            Expanded(
-              child: TabBarView(children: [
-                Waypoints(
-                  tourId: widget.tourId,
-                ),
-                const Text("This is where the POI editor goes."),
-              ]),
+          ),
+          const Divider(
+            height: 1,
+            thickness: 1,
+          ),
+          Expanded(
+            child: Waypoints(
+              tourId: widget.tourId,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
