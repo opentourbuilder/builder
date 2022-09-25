@@ -2,45 +2,6 @@ import 'package:flutter/material.dart';
 
 import './db.dart';
 
-abstract class DbObjectData<Id, Self extends DbObjectData<Id, Self>> {
-  DbObjectData(this.id);
-
-  @protected
-  final Id id;
-  final Map<Object, void Function(bool deleted)> _instances = {};
-
-  bool _deleted = false;
-
-  // /Registers state related to the DbObject with the given key.
-  void _register(Object key, void Function(bool deleted)? callback) {
-    if (_deleted) return;
-
-    _instances[key] = callback ?? (_) {};
-  }
-
-  /// Disposes of state related to the DbObject with the given key.
-  void _dispose(Object key) {
-    if (_deleted) return;
-
-    _instances.remove(key);
-
-    if (_instances.isEmpty) {
-      instance.dbObjects.remove(id);
-    }
-  }
-
-  /// Notifies all listeners other than `sender` that the object has been
-  /// modified.
-  @protected
-  void notify(Object sender) {
-    for (var listener in _instances.entries) {
-      if (!identical(sender, listener.key)) {
-        listener.value(_deleted);
-      }
-    }
-  }
-}
-
 abstract class DbObject<DataAccessor, Id, Data> {
   DbObject(DataAccessor Function(DbObject<DataAccessor, Id, Data>) data,
       DbObjectState<Id, Data> state)
@@ -48,6 +9,8 @@ abstract class DbObject<DataAccessor, Id, Data> {
     _data = data(this);
     state.register(this, (deleted) {
       if (deleted) _data = _state = null;
+
+      _changed = true;
     });
   }
 
@@ -74,7 +37,6 @@ abstract class DbObject<DataAccessor, Id, Data> {
   /// The state associated with this database object.
   ///
   /// Null if the object has been deleted from the database
-  @override
   DbObjectState<Id, Data>? get state => _state;
 
   /// Sets the callback that gets run whenever the object is updated.
@@ -105,11 +67,15 @@ class DbObjectState<Id, Data> {
 
   bool _deleted = false;
 
-  // /Registers state related to the DbObject with the given key.
-  void register(Object key, void Function(bool deleted)? callback) {
+  void markDeleted() {
+    _deleted = true;
+  }
+
+  // Registers state related to the DbObject with the given key.
+  void register(Object key, void Function(bool deleted) callback) {
     if (_deleted) return;
 
-    _instances[key] = callback ?? (_) {};
+    _instances[key] = callback;
   }
 
   /// Disposes of state related to the DbObject with the given key.
@@ -125,7 +91,7 @@ class DbObjectState<Id, Data> {
 
   /// Notifies all listeners other than `sender` that the object has been
   /// modified.
-  void notify(Object sender) {
+  void notify(Object? sender) {
     for (var listener in _instances.entries) {
       if (!identical(sender, listener.key)) {
         listener.value(_deleted);

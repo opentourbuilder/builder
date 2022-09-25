@@ -2,10 +2,7 @@ import '../db.dart';
 import 'point.dart';
 
 class WaypointId {
-  const WaypointId({
-    required this.tourId,
-    required this.waypointId,
-  });
+  const WaypointId(this.tourId, this.waypointId);
 
   final Uuid tourId;
   final Uuid waypointId;
@@ -71,7 +68,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
 
     requestEvent(WaypointsEventDescriptor(tourId: tourId));
 
-    var id = WaypointId(tourId: tourId, waypointId: waypointId);
+    var id = WaypointId(tourId, waypointId);
 
     var state = DbObjectState(id, data);
     dbObjects[id] = state;
@@ -81,7 +78,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
 
   Future<DbWaypoint?> waypoint(Uuid tourId, Uuid waypointId) async {
     return load<DbWaypoint, WaypointId, Waypoint>(
-      id: WaypointId(tourId: tourId, waypointId: waypointId),
+      id: WaypointId(tourId, waypointId),
       load: () async {
         var rows = await instance.db.query(
           symWaypoint,
@@ -96,7 +93,9 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
   }
 
   Future<void> deleteWaypoint(Uuid tourId, Uuid waypointId) async {
-    dbObjects.remove(WaypointId(tourId: tourId, waypointId: waypointId));
+    var obj = dbObjects.remove(WaypointId(tourId, waypointId));
+    obj?.markDeleted();
+    obj?.notify(null);
 
     await db.delete(
       symWaypoint,
