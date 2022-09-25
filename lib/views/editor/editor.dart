@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import '/db/db.dart';
 import '/db/models/tour.dart';
 import '/utils/evresi_page_route.dart';
-import 'tour/tour.dart';
+import '/views/editor/pois/pois.dart';
 import 'home.dart';
+import 'tour/tour.dart';
 
 class EditorPage extends StatefulWidget {
   const EditorPage({Key? key}) : super(key: key);
@@ -95,6 +96,13 @@ class _SidebarState extends State<Sidebar> {
                 leading: const Icon(Icons.description),
                 onTap: () => widget.navKey.currentState?.push(
                   EvresiPageRoute((context) => const Home()),
+                ),
+              ),
+              _SidebarItem(
+                "Points of Interest",
+                leading: const Icon(Icons.place),
+                onTap: () => widget.navKey.currentState?.push(
+                  EvresiPageRoute((context) => const Pois()),
                 ),
               ),
               const _SidebarHeader("Tours"),

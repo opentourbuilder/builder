@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '/db/db.dart' as db;
 import '/router.dart';
+import '/widgets/map_icon.dart';
 
 class TourMap extends StatefulWidget {
   const TourMap({
@@ -96,8 +97,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
             for (var waypoint in _waypoints.asMap().entries)
               DragMarker(
                 point: LatLng(waypoint.value.lat, waypoint.value.lng),
-                width: 30,
-                height: 30,
+                width: 40,
+                height: 40,
                 preservePosition: false,
                 onDragEnd: (details, point) {
                   db.instance.waypoint(widget.tourId, waypoint.value.id).then(
@@ -108,40 +109,22 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                     },
                   );
                 },
-                builder: (context) => _TourMapIcon(
-                  index: waypoint.key,
+                builder: (context) => MapIcon(
+                  child: Center(
+                    child: Text(
+                      '${waypoint.key + 1}',
+                      style: Theme.of(context).textTheme.button?.copyWith(
+                            fontSize: 14.0,
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
                   onPressed: () {},
                 ),
               ),
           ],
         ),
       ],
-    );
-  }
-}
-
-class _TourMapIcon extends StatelessWidget {
-  const _TourMapIcon({Key? key, required this.onPressed, required this.index})
-      : super(key: key);
-
-  final void Function() onPressed;
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return RawMaterialButton(
-      shape: const CircleBorder(
-        side: BorderSide(color: Colors.black, width: 2.5),
-      ),
-      fillColor: const Color.fromARGB(255, 255, 73, 73),
-      onPressed: onPressed,
-      child: Text(
-        '${index + 1}',
-        style: Theme.of(context).textTheme.button?.copyWith(
-              fontSize: 14.0,
-              color: Colors.white,
-            ),
-      ),
     );
   }
 }

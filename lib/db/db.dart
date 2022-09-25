@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart' as uuid_lib;
 
 import './db_object.dart';
 import 'models/gallery.dart';
+import 'models/poi.dart';
 import 'models/tour.dart';
 import 'models/waypoint.dart';
 
@@ -31,7 +32,8 @@ class EvresiDatabase = EvresiDatabaseBase
     with
         EvresiDatabaseWaypointMixin,
         EvresiDatabaseTourMixin,
-        EvresiDatabaseGalleryMixin;
+        EvresiDatabaseGalleryMixin,
+        EvresiDatabasePoiMixin;
 
 class EvresiDatabaseBase {
   late Database db;
@@ -118,33 +120,6 @@ class EvresiDatabaseBase {
       currentRevision = uncommittedRevisions[0];
     }
   }
-}
-
-class Poi {
-  Poi({
-    required this.name,
-    required this.desc,
-    required this.lat,
-    required this.lng,
-  });
-
-  Poi._fromRow(Map<String, Object?> row)
-      : name = row[symName]! as String,
-        desc = row[symDesc]! as String,
-        lat = row[symLat]! as double,
-        lng = row[symLng]! as double;
-
-  Map<String, Object?> _toRow() => {
-        symName: name,
-        symDesc: desc,
-        symLat: lat,
-        symLng: lng,
-      };
-
-  String name;
-  String desc;
-  double lat;
-  double lng;
 }
 
 class Event<D extends EventDescriptor<T>, T> {

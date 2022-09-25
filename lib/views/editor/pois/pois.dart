@@ -1,71 +1,37 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
-import '/db/models/waypoint.dart';
-import '/models/editor/tour.dart';
+import '/db/models/poi.dart';
+import '/views/editor/pois/map.dart';
 import '/widgets/location_field.dart';
 import '/widgets/modal.dart';
 
-class Waypoints extends StatefulWidget {
-  const Waypoints({
+class Pois extends StatefulWidget {
+  const Pois({
     super.key,
-    required this.tourId,
   });
 
-  final db.Uuid tourId;
-
   @override
-  State<Waypoints> createState() => _WaypointsState();
+  State<Pois> createState() => _PoisState();
 }
 
-class _WaypointsState extends State<Waypoints> {
-  db.Uuid? selectedWaypoint;
+class _PoisState extends State<Pois> {
+  final _contentEditorKey = GlobalKey();
+  final _mapKey = GlobalKey();
 
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        _WaypointList(
-          tourId: widget.tourId,
-          selectWaypoint: (id) => setState(() => selectedWaypoint = id),
-        ),
-        _WaypointEditor(
-          selectedWaypoint: selectedWaypoint,
-          selectWaypoint: (id) => setState(() => selectedWaypoint = id),
-        ),
-      ],
-    );
-  }
-}
+  db.Uuid? selectedPoi;
 
-class _WaypointList extends StatefulWidget {
-  const _WaypointList({
-    Key? key,
-    required this.tourId,
-    required this.selectWaypoint,
-  }) : super(key: key);
-
-  final db.Uuid tourId;
-  final void Function(db.Uuid?) selectWaypoint;
-
-  @override
-  State<_WaypointList> createState() => _WaypointListState();
-}
-
-class _WaypointListState extends State<_WaypointList> {
   StreamSubscription<db.Event>? _eventsSubscription;
 
-  List<db.PointSummary> _waypoints = [];
+  List<db.PointSummary> _pois = [];
 
   @override
   void initState() {
     super.initState();
     _eventsSubscription = db.instance.events.listen(_onEvent);
-    db.instance
-        .requestEvent(db.WaypointsEventDescriptor(tourId: widget.tourId));
+    db.instance.requestEvent(const db.PoisEventDescriptor());
   }
 
   @override
@@ -75,49 +41,130 @@ class _WaypointListState extends State<_WaypointList> {
   }
 
   void _onEvent(db.Event event) {
-    if (event.desc == db.WaypointsEventDescriptor(tourId: widget.tourId)) {
+    if (event.desc == const db.PoisEventDescriptor()) {
       setState(() {
-        _waypoints = event.value;
+        _pois = event.value;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final contentEditor = Container(
+        key: _contentEditorKey,
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: Stack(
+          children: [
+            _PoiList(
+              selectPoi: (id) => setState(() => selectedPoi = id),
+              pois: _pois,
+            ),
+            _PoiEditor(
+              selectedPoi: selectedPoi,
+              selectPoi: (id) => setState(() => selectedPoi = id),
+            ),
+          ],
+        ),
+      );
+
+      final map = PoiMap(
+        key: _mapKey,
+        pois: _pois,
+      );
+
+      Widget child;
+      if (constraints.maxWidth >= 800) {
+        child = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            contentEditor,
+            const VerticalDivider(
+              width: 1.0,
+              thickness: 1.0,
+            ),
+            Expanded(child: map),
+          ],
+        );
+      } else {
+        child = DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              TabBar(
+                labelColor: Colors.black,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+                tabs: const [
+                  Tab(child: Text("Content")),
+                  Tab(child: Text("Map")),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    contentEditor,
+                    map,
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return child;
+    });
+  }
+}
+
+class _PoiList extends StatefulWidget {
+  const _PoiList({
+    Key? key,
+    required this.selectPoi,
+    required this.pois,
+  }) : super(key: key);
+
+  final void Function(db.Uuid?) selectPoi;
+  final List<db.PointSummary> pois;
+
+  @override
+  State<_PoiList> createState() => _PoiListState();
+}
+
+class _PoiListState extends State<_PoiList> {
+  @override
+  Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.all(12.0),
-      itemCount: _waypoints.length + 1,
+      itemCount: widget.pois.length + 1,
       itemBuilder: (context, index) {
-        if (index < _waypoints.length) {
-          return _Waypoint(
-            key: ValueKey(_waypoints[index].id),
-            index: index,
-            onTap: () => widget.selectWaypoint(_waypoints[index].id),
-            tourId: widget.tourId,
-            summary: _waypoints[index],
+        if (index < widget.pois.length) {
+          return _Poi(
+            key: ValueKey(widget.pois[index].id),
+            onTap: () => widget.selectPoi(widget.pois[index].id),
+            summary: widget.pois[index],
           );
         } else {
           return UnconstrainedBox(
             child: Padding(
               padding: const EdgeInsets.all(4.0),
               child: ElevatedButton(
-                onPressed: () {
-                  db.instance.createWaypoint(
-                    widget.tourId,
-                    Waypoint(
+                onPressed: () async {
+                  var poi = await db.instance.createPoi(
+                    Poi(
                       name: "Untitled",
                       desc: "",
                       lat: 0,
                       lng: 0,
-                      narrationPath: null,
                     ),
                   );
+                  poi.dispose();
                 },
                 child: Row(
                   children: const [
                     Icon(Icons.add),
                     SizedBox(width: 16.0),
-                    Text("Create Waypoint"),
+                    Text("Create Point of Interest"),
                   ],
                 ),
               ),
@@ -129,25 +176,21 @@ class _WaypointListState extends State<_WaypointList> {
   }
 }
 
-class _Waypoint extends StatefulWidget {
-  const _Waypoint({
+class _Poi extends StatefulWidget {
+  const _Poi({
     Key? key,
-    required this.index,
-    required this.tourId,
     required this.summary,
     required this.onTap,
   }) : super(key: key);
 
-  final int index;
-  final db.Uuid tourId;
   final db.PointSummary summary;
   final void Function() onTap;
 
   @override
-  State<_Waypoint> createState() => _WaypointState();
+  State<_Poi> createState() => _PoiState();
 }
 
-class _WaypointState extends State<_Waypoint> {
+class _PoiState extends State<_Poi> {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -163,14 +206,6 @@ class _WaypointState extends State<_Waypoint> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(width: 16.0),
-              Text(
-                "${widget.index + 1}.",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 4.0),
               Text(
                 widget.summary.name!,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -192,7 +227,7 @@ class _WaypointState extends State<_Waypoint> {
                 splashColor: const Color(0x08000088),
                 constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
                 onPressed: () {
-                  db.instance.deleteWaypoint(widget.tourId, widget.summary.id);
+                  db.instance.deletePoi(widget.summary.id);
                 },
                 child: const Icon(Icons.delete),
               ),
@@ -215,92 +250,98 @@ class _WaypointState extends State<_Waypoint> {
   }
 }
 
-const _waypointEditorInputDecoration = InputDecoration(
+const _poiEditorInputDecoration = InputDecoration(
   filled: true,
   fillColor: Color(0xFFFFFFFF),
   hoverColor: Color(0xFFFFFFFF),
 );
 
-class _WaypointEditor extends StatefulWidget {
-  const _WaypointEditor({
+class _PoiEditor extends StatefulWidget {
+  const _PoiEditor({
     super.key,
-    required this.selectedWaypoint,
-    required this.selectWaypoint,
+    required this.selectedPoi,
+    required this.selectPoi,
   });
 
-  final db.Uuid? selectedWaypoint;
-  final void Function(db.Uuid?) selectWaypoint;
+  final db.Uuid? selectedPoi;
+  final void Function(db.Uuid?) selectPoi;
 
   @override
-  State<StatefulWidget> createState() => _WaypointEditorState();
+  State<StatefulWidget> createState() => _PoiEditorState();
 }
 
-class _WaypointEditorState extends State<_WaypointEditor> {
-  db.Uuid? waypointId;
-  DbWaypoint? waypoint;
+class _PoiEditorState extends State<_PoiEditor> {
+  db.Uuid? poiId;
+  DbPoi? poi;
+
+  TextEditingController titleController = TextEditingController();
+  TextEditingController descController = TextEditingController();
 
   @override
   void dispose() {
-    waypoint?.dispose();
+    poi?.dispose();
     super.dispose();
   }
 
   @override
+  void didUpdateWidget(covariant _PoiEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var tourEditorModel = context.watch<TourEditorModel>();
+    if (widget.selectedPoi != poiId) {
+      poiId = widget.selectedPoi;
 
-    if (widget.selectedWaypoint != waypointId) {
-      waypointId = widget.selectedWaypoint;
-
-      waypoint?.dispose();
-      waypoint = null;
-      if (waypointId != null) {
-        db.instance.waypoint(tourEditorModel.tourId, waypointId!).then((value) {
+      poi?.dispose();
+      poi = null;
+      if (poiId != null) {
+        db.instance.poi(poiId!).then((value) {
           value?.listen((() => setState(() {})));
-          setState(() => waypoint = value);
+          setState(() => poi = value);
+          titleController.text = poi?.data?.name ?? "";
+          descController.text = poi?.data?.desc ?? "";
         });
       }
     }
 
     return AnimatedScale(
-      scale: widget.selectedWaypoint != null ? 1.0 : 0.0,
+      scale: widget.selectedPoi != null ? 1.0 : 0.0,
       curve: Curves.ease,
       duration: const Duration(milliseconds: 150),
       child: IgnorePointer(
-        ignoring: widget.selectedWaypoint == null,
+        ignoring: widget.selectedPoi == null,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Modal(
-            title: const Text("Edit Waypoint"),
+            title: const Text("Edit Point of Interest"),
             child: Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
                     TextField(
-                      decoration: _waypointEditorInputDecoration.copyWith(
+                      decoration: _poiEditorInputDecoration.copyWith(
                           labelText: "Title"),
-                      controller: TextEditingController(
-                          text: waypoint?.data?.name ?? ""),
+                      controller: titleController,
                       onChanged: (name) {
-                        waypoint!.data!.name = name;
+                        poi!.data!.name = name;
                       },
                     ),
                     const SizedBox(height: 16.0),
                     TextField(
-                      decoration: _waypointEditorInputDecoration.copyWith(
+                      decoration: _poiEditorInputDecoration.copyWith(
                           labelText: "Description"),
                       minLines: 4,
                       maxLines: 4,
-                      controller: TextEditingController(
-                          text: waypoint?.data?.desc ?? ""),
+                      controller: descController,
                       onChanged: (desc) {
-                        waypoint!.data!.desc = desc;
+                        poi!.data!.desc = desc;
                       },
                     ),
                     const SizedBox(height: 16.0),
                     LocationField(
-                      point: waypoint,
+                      point: poi,
                     ),
                     const SizedBox(height: 16.0),
                     ElevatedButton(
@@ -313,7 +354,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                           ],
                         ),
                       ),
-                      onPressed: () => widget.selectWaypoint(null),
+                      onPressed: () => widget.selectPoi(null),
                     ),
                   ],
                 ),

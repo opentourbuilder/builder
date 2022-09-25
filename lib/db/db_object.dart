@@ -53,6 +53,18 @@ abstract class DbObject<DataAccessor, Id, Data> {
 
   late DataAccessor? _data;
   DbObjectState<Id, Data>? _state;
+  bool _changed = false;
+
+  /// Returns true if the object has been changed by some other accessor of the
+  /// object since this property was last accessed.
+  bool get changed {
+    if (_changed) {
+      _changed = false;
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   /// The data associated with this database object.
   ///
@@ -70,6 +82,7 @@ abstract class DbObject<DataAccessor, Id, Data> {
     _state?.register(this, (deleted) {
       if (deleted) _data = _state = null;
 
+      _changed = true;
       onUpdate();
     });
   }

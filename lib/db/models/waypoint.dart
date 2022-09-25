@@ -1,4 +1,5 @@
 import '../db.dart';
+import 'point.dart';
 
 class WaypointId {
   const WaypointId({
@@ -112,7 +113,7 @@ class DbWaypoint extends DbObject<DbWaypointAccessor, WaypointId, Waypoint> {
       : super((self) => DbWaypointAccessor(self), state);
 }
 
-class DbWaypointAccessor {
+class DbWaypointAccessor implements DbPointAccessor {
   DbWaypointAccessor(this.object);
 
   final DbObject<DbWaypointAccessor, WaypointId, Waypoint> object;
@@ -130,13 +131,17 @@ class DbWaypointAccessor {
     _changed();
   }
 
+  @override
   double get lat => state.data.lat;
+  @override
   set lat(double value) {
     state.data.lat = value;
     _changed();
   }
 
+  @override
   double get lng => state.data.lng;
+  @override
   set lng(double value) {
     state.data.lng = value;
     _changed();
