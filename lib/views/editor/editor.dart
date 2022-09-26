@@ -248,15 +248,20 @@ class TopBar extends StatelessWidget {
       onPressed: onPressed,
       splashColor: const Color.fromARGB(0, 0, 0, 0),
       highlightColor: const Color.fromARGB(20, 0, 0, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 6.0),
       child: Row(
         children: [
-          Icon(icon, color: const Color.fromARGB(255, 82, 87, 115)),
-          const SizedBox(width: 8.0),
+          Icon(
+            icon,
+            color: const Color.fromARGB(255, 82, 87, 115),
+            size: 20,
+          ),
+          const SizedBox(width: 4.0),
           Text(
             text,
             style: const TextStyle(
               color: Color.fromARGB(255, 82, 87, 115),
+              fontSize: 13,
             ),
           ),
         ],
