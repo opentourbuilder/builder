@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:builder/widgets/gallery_editor/gallery_editor.dart';
 import 'package:flutter/material.dart';
 
 import '/db/db.dart' as db;
 import '/db/models/poi.dart';
 import '/views/editor/pois/map.dart';
+import '/widgets/gallery_editor/gallery_editor.dart';
 import '/widgets/location_field.dart';
 import '/widgets/modal.dart';
 

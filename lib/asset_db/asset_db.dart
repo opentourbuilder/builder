@@ -26,6 +26,8 @@ enum AssetType {
     ".png": AssetType.image,
     ".svg": AssetType.image,
     ".ogg": AssetType.narration,
+    ".mp3": AssetType.narration,
+    ".wav": AssetType.narration,
   });
 }
 
@@ -53,7 +55,7 @@ class AssetDb {
 
   final String assetsPath;
 
-  Future<List<Asset>> list([String query = ""]) async {
+  Future<List<Asset>> list([String query = "", AssetType? queryType]) async {
     query = query.toLowerCase();
 
     var results = <Asset>[];
@@ -67,7 +69,7 @@ class AssetDb {
 
       var type = AssetType.extensionMap[path.extension(asset.path)];
 
-      if (type != null) {
+      if (type != null && (queryType == null || type == queryType)) {
         results.add(Asset(name, type, asset.path));
       }
     }

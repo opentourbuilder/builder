@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:builder/widgets/gallery_editor/gallery_image_modal.dart';
 import 'package:flutter/material.dart';
 
-import '/db/db.dart' as db;
 import '/asset_db/asset_db.dart';
+import '/db/db.dart' as db;
 import '/db/models/gallery.dart';
+import '/widgets/gallery_editor/gallery_image_modal.dart';
 
 class GalleryEditor extends StatefulWidget {
   const GalleryEditor({

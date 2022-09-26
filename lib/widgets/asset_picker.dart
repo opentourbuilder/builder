@@ -21,9 +21,28 @@ class AssetPicker extends StatefulWidget {
 }
 
 class _AssetPickerState extends State<AssetPicker> {
+  final FocusNode focusNode = FocusNode();
+  final TextEditingController controller = TextEditingController();
+
   String? newAssetPath;
   String? newAssetName;
   String? newAssetError;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.selectedAssetName != null) {
+      controller.text = widget.selectedAssetName!;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AssetPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    controller.text = widget.selectedAssetName ?? "";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +53,8 @@ class _AssetPickerState extends State<AssetPicker> {
           Expanded(
             child: LayoutBuilder(builder: (context, constraints) {
               return RawAutocomplete<Asset>(
-                initialValue:
-                    TextEditingValue(text: widget.selectedAssetName ?? ""),
+                textEditingController: controller,
+                focusNode: focusNode,
                 displayStringForOption: (asset) => asset.name,
                 optionsViewBuilder: (context, onSelected, options) =>
                     _autocompleteOptionsBuilder(
@@ -43,11 +62,15 @@ class _AssetPickerState extends State<AssetPicker> {
                 fieldViewBuilder: (context, textEditingController, focusNode,
                     onFieldSubmitted) {
                   return TextField(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       filled: true,
-                      fillColor: Color(0xFFFFFFFF),
-                      hoverColor: Color(0xFFFFFFFF),
-                      labelText: "Asset",
+                      fillColor: const Color(0xFFFFFFFF),
+                      hoverColor: const Color(0xFFFFFFFF),
+                      labelText: widget.type == AssetType.image
+                          ? "Image"
+                          : widget.type == AssetType.narration
+                              ? "Narration"
+                              : "Asset",
                       hintText: "Search for an asset...",
                     ),
                     controller: textEditingController,
@@ -55,7 +78,8 @@ class _AssetPickerState extends State<AssetPicker> {
                     onSubmitted: (_) => onFieldSubmitted(),
                   );
                 },
-                optionsBuilder: (value) => assetDbInstance.list(value.text),
+                optionsBuilder: (value) =>
+                    assetDbInstance.list(value.text, widget.type),
                 onSelected: widget.onAssetSelected,
               );
             }),

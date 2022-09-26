@@ -1,10 +1,12 @@
 import 'dart:async';
 
-import 'package:builder/widgets/gallery_editor/gallery_editor.dart';
 import 'package:flutter/material.dart';
 
+import '/asset_db/asset_db.dart';
 import '/db/db.dart' as db;
 import '/db/models/waypoint.dart';
+import '/widgets/asset_picker.dart';
+import '/widgets/gallery_editor/gallery_editor.dart';
 import '/widgets/location_field.dart';
 import '/widgets/modal.dart';
 
@@ -286,6 +288,14 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                     const SizedBox(height: 16.0),
                     LocationField(
                       point: waypoint,
+                    ),
+                    const SizedBox(height: 16.0),
+                    AssetPicker(
+                      selectedAssetName: waypoint?.data?.narrationPath,
+                      onAssetSelected: (asset) {
+                        waypoint?.data?.narrationPath = asset.name;
+                      },
+                      type: AssetType.narration,
                     ),
                     const SizedBox(height: 16.0),
                     if (widget.selectedWaypoint != null)
