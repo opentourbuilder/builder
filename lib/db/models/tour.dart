@@ -1,5 +1,16 @@
 import '../db.dart';
 
+/// An ID that is equal to all other instances of the same type.
+class TourId {
+  const TourId();
+
+  @override
+  operator ==(Object other) => other is TourId;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+}
+
 class Tour {
   Tour({
     required this.name,
@@ -20,64 +31,50 @@ class Tour {
 }
 
 mixin EvresiDatabaseTourMixin on EvresiDatabaseBase {
-  Future<DbTour> createTour(Tour data) async {
-    var id = Uuid.v4();
+  static final _blankTour = Tour(name: "Untitled", desc: "");
 
-    await instance.db.insert(symTour, {
-      symId: id.bytes,
-      symName: data.name,
-      symDesc: data.desc,
-      symRevision: instance.currentRevision.bytes,
-      symCreated: instance.currentRevision.bytes,
-    });
+  Future<DbTour?> tour() async {
+    if (type != EvresiDatabaseType.tour) {
+      throw Exception(
+          "Attempted to use Tour-only method in non-Tour database.");
+    }
 
-    instance.requestEvent(const ToursEventDescriptor());
-
-    var state = DbObjectState(id, data);
-    dbObjects[id] = state;
-
-    return DbTour._(state);
-  }
-
-  Future<DbTour?> tour(Uuid id) async {
-    return load<DbTour, Uuid, Tour>(
-      id: id,
+    return load<DbTour, TourId, Tour>(
+      id: const TourId(),
       load: () async {
-        var rows = await instance.db.query(
+        var rows = await instance.db!.query(
           symTour,
           columns: [symName, symDesc],
-          where: "$symId = ?",
-          whereArgs: [id.bytes],
         );
-        return rows.isEmpty ? null : Tour._fromRow(rows[0]);
+
+        if (rows.isEmpty) {
+          await instance.db!.insert(symTour, {
+            symName: _blankTour.name,
+            symDesc: _blankTour.desc,
+            symRevision: instance.currentRevision.bytes,
+            symCreated: instance.currentRevision.bytes,
+          });
+
+          return _blankTour;
+        } else {
+          return Tour._fromRow(rows[0]);
+        }
       },
       createObject: (state) => DbTour._(state),
     );
   }
-
-  Future<void> deleteTour(Uuid tourId) async {
-    dbObjects.remove(tourId);
-
-    await instance.db.delete(
-      symTour,
-      where: "$symId = ?",
-      whereArgs: [tourId],
-    );
-
-    requestEvent(const ToursEventDescriptor());
-  }
 }
 
-class DbTour extends DbObject<DbTourAccessor, Uuid, Tour> {
-  DbTour._(DbObjectState<Uuid, Tour> state)
+class DbTour extends DbObject<DbTourAccessor, TourId, Tour> {
+  DbTour._(DbObjectState<TourId, Tour> state)
       : super((self) => DbTourAccessor(self), state);
 }
 
 class DbTourAccessor {
   DbTourAccessor(this.object);
 
-  final DbObject<DbTourAccessor, Uuid, Tour> object;
-  late final DbObjectState<Uuid, Tour> state = object.state!;
+  final DbObject<DbTourAccessor, TourId, Tour> object;
+  late final DbObjectState<TourId, Tour> state = object.state!;
 
   String get name => state.data.name;
   set name(String value) {
@@ -92,18 +89,13 @@ class DbTourAccessor {
   }
 
   void _changed() async {
-    await instance.db.update(
+    await instance.db!.update(
       symTour,
       {
         ...state.data._toRow(),
         symRevision: instance.currentRevision.bytes,
       },
-      where: "$symId = ?",
-      whereArgs: [state.id.bytes],
     );
-
-    // in case the tour name was changed
-    instance.requestEvent(const ToursEventDescriptor());
 
     state.notify(object);
   }

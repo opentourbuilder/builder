@@ -13,20 +13,14 @@ import 'models/waypoint.dart';
 
 export './db_object.dart';
 
-late EvresiDatabase _db;
-
-Future<void> initEvresiDatabase() async {
-  /*var dir = await getApplicationSupportDirectory();
-  dir.create(recursive: true);
-
-  _db = EvresiDatabase();
-  await _db.open(p.join(dir.path, 'main.db'));*/
-
-  _db = EvresiDatabase();
-  await _db.open(inMemoryDatabasePath);
-}
+EvresiDatabase _db = EvresiDatabase();
 
 EvresiDatabase get instance => _db;
+
+enum EvresiDatabaseType {
+  tour,
+  poiSet,
+}
 
 class EvresiDatabase = EvresiDatabaseBase
     with
@@ -36,7 +30,8 @@ class EvresiDatabase = EvresiDatabaseBase
         EvresiDatabasePoiMixin;
 
 class EvresiDatabaseBase {
-  late Database db;
+  Database? db;
+  EvresiDatabaseType? type;
 
   late Uuid currentRevision;
 
@@ -45,22 +40,40 @@ class EvresiDatabaseBase {
   final StreamController<Event> _events = StreamController.broadcast();
   Stream<Event> get events => _events.stream;
 
-  Future<void> open(String path) async {
+  final Set<void Function()> _openListeners = {};
+
+  void addOpenListener(void Function() onOpen) {
+    _openListeners.add(onOpen);
+  }
+
+  void removeOpenListener(void Function() onOpen) {
+    _openListeners.remove(onOpen);
+  }
+
+  Future<void> open(String path, EvresiDatabaseType type) async {
+    this.type = type;
     db = await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
         version: 1,
         onCreate: (db, version) async {
-          await db.execute(_sqlOnCreate);
+          await db.execute(type == EvresiDatabaseType.tour
+              ? _tourSqlOnCreate
+              : _poiSetSqlOnCreate);
         },
       ),
     );
 
     await _initCurrentRevision();
+
+    for (var listener in _openListeners) {
+      listener();
+    }
   }
 
   Future<void> close() async {
-    await db.close();
+    type = null;
+    await db?.close();
   }
 
   // Commits the current revision of the database.
@@ -96,7 +109,7 @@ class EvresiDatabaseBase {
   }
 
   Future<void> _initCurrentRevision() async {
-    var uncommittedRevisions = (await db.query(
+    var uncommittedRevisions = (await db!.query(
       symRevision,
       columns: [symId],
       where: "$symCommitted = 0",
@@ -108,7 +121,7 @@ class EvresiDatabaseBase {
       // create new revision if there is no uncommitted one
       var id = Uuid.v4();
 
-      await db.insert(symRevision, {
+      await db!.insert(symRevision, {
         symId: id.bytes,
         symTimestamp: DateTime.now().millisecondsSinceEpoch,
         symUser: "TODO", // TODO
@@ -138,39 +151,14 @@ abstract class EventDescriptor<T> {
   Future<T> _observe(EvresiDatabaseBase db);
 }
 
-class ToursEventDescriptor extends EventDescriptor<List<TourSummary>> {
-  const ToursEventDescriptor();
-
-  @override
-  Future<List<TourSummary>> _observe(EvresiDatabaseBase db) async {
-    var rows = await db.db.query(
-      symTour,
-      columns: [symId, symName],
-      orderBy: symName,
-    );
-
-    return rows.map(TourSummary._fromRow).toList();
-  }
-
-  @override
-  bool operator ==(Object other) => other is ToursEventDescriptor;
-
-  @override
-  int get hashCode => runtimeType.hashCode + 1;
-}
-
 class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
-  const WaypointsEventDescriptor({required this.tourId});
-
-  final Uuid tourId;
+  const WaypointsEventDescriptor();
 
   @override
   Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
-    var rows = await db.db.query(
+    var rows = await db.db!.query(
       symWaypoint,
       columns: [symId, symOrder, symLat, symLng, symName],
-      where: "$symTour = ?",
-      whereArgs: [tourId.bytes],
       orderBy: symOrder,
     );
 
@@ -178,11 +166,10 @@ class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
   }
 
   @override
-  bool operator ==(Object other) =>
-      other is WaypointsEventDescriptor && tourId == other.tourId;
+  bool operator ==(Object other) => other is WaypointsEventDescriptor;
 
   @override
-  int get hashCode => tourId.hashCode;
+  int get hashCode => runtimeType.hashCode;
 }
 
 class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
@@ -190,7 +177,7 @@ class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
 
   @override
   Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
-    var rows = await db.db.query(
+    var rows = await db.db!.query(
       symPoi,
       columns: [symId, symLat, symLng, symName],
       orderBy: symName,
@@ -249,6 +236,9 @@ class Uuid {
   /// Creates a random UUID (version 4).
   Uuid.v4() : bytes = const uuid_lib.Uuid().v4obj().toBytes();
 
+  static final zero = Uuid(
+      Uint8List.fromList([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+
   final Uint8List bytes;
 
   @override
@@ -296,23 +286,11 @@ const symWaypoint = 'waypoint';
 const symPoi = 'poi';
 const symGallery = 'gallery';
 
-const _sqlOnCreate = """
+const _commonSqlOnCreate = """
   CREATE TABLE IF NOT EXISTS $symGallery (
      $symItem BLOB NOT NULL,
      $symPath TEXT NOT NULL,
      $symOrder INTEGER NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS $symPoi (
-     $symId BLOB NOT NULL,
-     $symName TEXT NOT NULL,
-     $symDesc TEXT,
-     $symLat REAL NOT NULL,
-     $symLng REAL NOT NULL,
-     $symRevision BLOB NOT NULL,
-     $symCreated BLOB NOT NULL,
-    FOREIGN KEY ($symRevision) REFERENCES  $symRevision ($symId),
-    FOREIGN KEY ($symCreated) REFERENCES  $symRevision ($symId)
   );
 
   CREATE TABLE IF NOT EXISTS $symRevision (
@@ -322,21 +300,22 @@ const _sqlOnCreate = """
      $symCommitted INTEGER NOT NULL,
     PRIMARY KEY ($symId)
   );
+""";
+
+const _tourSqlOnCreate = """
+  $_commonSqlOnCreate
 
   CREATE TABLE IF NOT EXISTS $symTour (
-     $symId BLOB NOT NULL,
      $symName TEXT NOT NULL,
      $symDesc TEXT NOT NULL,
      $symRevision BLOB NOT NULL,
      $symCreated BLOB NOT NULL,
-    PRIMARY KEY ($symId),
     FOREIGN KEY ($symRevision) REFERENCES  $symRevision ($symId),
     FOREIGN KEY ($symCreated) REFERENCES  $symRevision ($symId)
   );
 
   CREATE TABLE IF NOT EXISTS $symWaypoint (
      $symId BLOB NOT NULL,
-     $symTour BLOB NOT NULL,
      $symOrder INTEGER,
      $symName TEXT,
      $symDesc TEXT,
@@ -346,7 +325,22 @@ const _sqlOnCreate = """
      $symRevision BLOB NOT NULL,
      $symCreated BLOB NOT NULL,
     PRIMARY KEY ($symId),
-    FOREIGN KEY ($symTour) REFERENCES  $symTour ($symId),
+    FOREIGN KEY ($symRevision) REFERENCES  $symRevision ($symId),
+    FOREIGN KEY ($symCreated) REFERENCES  $symRevision ($symId)
+  );
+""";
+
+const _poiSetSqlOnCreate = """
+  $_commonSqlOnCreate
+
+  CREATE TABLE IF NOT EXISTS $symPoi (
+     $symId BLOB NOT NULL,
+     $symName TEXT NOT NULL,
+     $symDesc TEXT,
+     $symLat REAL NOT NULL,
+     $symLng REAL NOT NULL,
+     $symRevision BLOB NOT NULL,
+     $symCreated BLOB NOT NULL,
     FOREIGN KEY ($symRevision) REFERENCES  $symRevision ($symId),
     FOREIGN KEY ($symCreated) REFERENCES  $symRevision ($symId)
   );

@@ -1,21 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '/db/db.dart' as db;
 import '/db/models/waypoint.dart';
-import '/models/editor/tour.dart';
 import '/widgets/location_field.dart';
 import '/widgets/modal.dart';
 
 class Waypoints extends StatefulWidget {
-  const Waypoints({
-    super.key,
-    required this.tourId,
-  });
-
-  final db.Uuid tourId;
+  const Waypoints({super.key});
 
   @override
   State<Waypoints> createState() => _WaypointsState();
@@ -29,7 +22,6 @@ class _WaypointsState extends State<Waypoints> {
     return Stack(
       children: [
         _WaypointList(
-          tourId: widget.tourId,
           selectWaypoint: (id) => setState(() => selectedWaypoint = id),
         ),
         _WaypointEditor(
@@ -43,12 +35,10 @@ class _WaypointsState extends State<Waypoints> {
 
 class _WaypointList extends StatefulWidget {
   const _WaypointList({
-    Key? key,
-    required this.tourId,
+    super.key,
     required this.selectWaypoint,
-  }) : super(key: key);
+  });
 
-  final db.Uuid tourId;
   final void Function(db.Uuid?) selectWaypoint;
 
   @override
@@ -64,8 +54,7 @@ class _WaypointListState extends State<_WaypointList> {
   void initState() {
     super.initState();
     _eventsSubscription = db.instance.events.listen(_onEvent);
-    db.instance
-        .requestEvent(db.WaypointsEventDescriptor(tourId: widget.tourId));
+    db.instance.requestEvent(const db.WaypointsEventDescriptor());
   }
 
   @override
@@ -75,7 +64,7 @@ class _WaypointListState extends State<_WaypointList> {
   }
 
   void _onEvent(db.Event event) {
-    if (event.desc == db.WaypointsEventDescriptor(tourId: widget.tourId)) {
+    if (event.desc == const db.WaypointsEventDescriptor()) {
       setState(() {
         _waypoints = event.value;
       });
@@ -93,7 +82,6 @@ class _WaypointListState extends State<_WaypointList> {
             key: ValueKey(_waypoints[index].id),
             index: index,
             onTap: () => widget.selectWaypoint(_waypoints[index].id),
-            tourId: widget.tourId,
             summary: _waypoints[index],
           );
         } else {
@@ -103,7 +91,6 @@ class _WaypointListState extends State<_WaypointList> {
               child: ElevatedButton(
                 onPressed: () {
                   db.instance.createWaypoint(
-                    widget.tourId,
                     Waypoint(
                       name: "Untitled",
                       desc: "",
@@ -133,13 +120,11 @@ class _Waypoint extends StatefulWidget {
   const _Waypoint({
     Key? key,
     required this.index,
-    required this.tourId,
     required this.summary,
     required this.onTap,
   }) : super(key: key);
 
   final int index;
-  final db.Uuid tourId;
   final db.PointSummary summary;
   final void Function() onTap;
 
@@ -192,7 +177,7 @@ class _WaypointState extends State<_Waypoint> {
                 splashColor: const Color(0x08000088),
                 constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
                 onPressed: () {
-                  db.instance.deleteWaypoint(widget.tourId, widget.summary.id);
+                  db.instance.deleteWaypoint(widget.summary.id);
                 },
                 child: const Icon(Icons.delete),
               ),
@@ -236,7 +221,6 @@ class _WaypointEditor extends StatefulWidget {
 }
 
 class _WaypointEditorState extends State<_WaypointEditor> {
-  db.Uuid? waypointId;
   DbWaypoint? waypoint;
 
   @override
@@ -246,22 +230,22 @@ class _WaypointEditorState extends State<_WaypointEditor> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    var tourEditorModel = context.watch<TourEditorModel>();
+  void didUpdateWidget(covariant _WaypointEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-    if (widget.selectedWaypoint != waypointId) {
-      waypointId = widget.selectedWaypoint;
-
-      waypoint?.dispose();
-      waypoint = null;
-      if (waypointId != null) {
-        db.instance.waypoint(tourEditorModel.tourId, waypointId!).then((value) {
+    if (widget.selectedWaypoint != oldWidget.selectedWaypoint) {
+      if (widget.selectedWaypoint != null) {
+        db.instance.waypoint(widget.selectedWaypoint!).then((value) {
+          waypoint?.dispose();
           value?.listen((() => setState(() {})));
           setState(() => waypoint = value);
         });
       }
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return AnimatedScale(
       scale: widget.selectedWaypoint != null ? 1.0 : 0.0,
       curve: Curves.ease,

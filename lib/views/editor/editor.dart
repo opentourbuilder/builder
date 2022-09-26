@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 
-import '/db/db.dart';
+import '/db/db.dart' as db;
 import '/db/models/tour.dart';
 import '/utils/evresi_page_route.dart';
 import '/views/editor/pois/pois.dart';
@@ -19,17 +21,48 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   final GlobalKey<NavigatorState> navKey = GlobalKey();
 
+  db.EvresiDatabaseType? dbType;
+
+  @override
+  void initState() {
+    super.initState();
+
+    db.instance.addOpenListener(_onDbOpen);
+  }
+
+  @override
+  void dispose() {
+    db.instance.removeOpenListener(_onDbOpen);
+
+    super.dispose();
+  }
+
+  void _onDbOpen() {
+    setState(() => dbType = db.instance.type);
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget child = const SizedBox();
+    if (dbType == null) {
+      child = const Home();
+    } else if (dbType == db.EvresiDatabaseType.tour) {
+      child = const TourEditor();
+    } else if (dbType == db.EvresiDatabaseType.poiSet) {
+      child = const Pois();
+    }
+
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          Sidebar(navKey: navKey),
+          const TopBar(),
           Expanded(
-            child: Navigator(
-              key: navKey,
-              onGenerateInitialRoutes: (navigator, initialRoute) =>
-                  [EvresiPageRoute((context) => const Home())],
+            child: Row(
+              children: [
+                Expanded(
+                  child: child,
+                ),
+              ],
             ),
           ),
         ],
@@ -38,201 +71,116 @@ class _EditorPageState extends State<EditorPage> {
   }
 }
 
-class Sidebar extends StatefulWidget {
-  const Sidebar({Key? key, required this.navKey}) : super(key: key);
-
-  final GlobalKey<NavigatorState> navKey;
-
-  @override
-  State<StatefulWidget> createState() => _SidebarState();
-}
-
-class _SidebarState extends State<Sidebar> {
-  StreamSubscription<Event>? _eventsSubscription;
-  List<TourSummary> _tours = [];
-
-  @override
-  void initState() {
-    super.initState();
-
-    // subscribe to events from the db and request the list of tours
-    _eventsSubscription = instance.events.listen(_onEvent);
-    instance.requestEvent(const ToursEventDescriptor());
-  }
-
-  @override
-  void dispose() {
-    _eventsSubscription?.cancel();
-
-    super.dispose();
-  }
-
-  void _onEvent(Event event) {
-    if (event.desc is ToursEventDescriptor) {
-      setState(() {
-        _tours = event.value;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 275,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SidebarItem(
-                "Home",
-                leading: const Icon(Icons.home),
-                onTap: () => widget.navKey.currentState?.push(
-                  EvresiPageRoute((context) => const Home()),
-                ),
-              ),
-              _SidebarItem(
-                "Assets",
-                leading: const Icon(Icons.description),
-                onTap: () => widget.navKey.currentState?.push(
-                  EvresiPageRoute((context) => const Home()),
-                ),
-              ),
-              _SidebarItem(
-                "Points of Interest",
-                leading: const Icon(Icons.place),
-                onTap: () => widget.navKey.currentState?.push(
-                  EvresiPageRoute((context) => const Pois()),
-                ),
-              ),
-              const _SidebarHeader("Tours"),
-              for (var item in _tours)
-                _SidebarItem(
-                  item.name,
-                  key: ValueKey(item.id),
-                  leading: const Icon(Icons.map),
-                  onTap: () => widget.navKey.currentState?.push(
-                    EvresiPageRoute((context) => TourEditor(tourId: item.id)),
-                  ),
-                ),
-              _SidebarItem(
-                "Create Tour",
-                leading: const Icon(Icons.add),
-                onTap: () {
-                  instance.createTour(Tour(name: "New tour", desc: ""));
-                },
-              ),
-              const Expanded(
-                child: _SidebarControls(),
-              ),
-            ],
-          ),
-        ),
-        const VerticalDivider(
-          width: 1,
-          thickness: 1,
-        ),
-      ],
-    );
-  }
-}
-
-class _SidebarControls extends StatelessWidget {
-  const _SidebarControls({Key? key}) : super(key: key);
+class TopBar extends StatelessWidget {
+  const TopBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        const Divider(
-          thickness: 1,
-          height: 1,
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
+        Container(
+          height: 48,
+          color: const Color.fromARGB(255, 233, 236, 255),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  child: const Text("PUBLISH"),
-                ),
+              _button(
+                icon: Icons.note_add,
+                text: "New Tour...",
+                onPressed: () async {
+                  var chosenPath = await FilePicker.platform.saveFile(
+                    dialogTitle: 'New Evresi Tour File',
+                    fileName: 'Untitled.evtour',
+                  );
+
+                  if (chosenPath != null) {
+                    await db.instance.close();
+
+                    await db.instance
+                        .open(chosenPath, db.EvresiDatabaseType.tour);
+                  }
+                },
               ),
-              const SizedBox(width: 8.0),
-              Expanded(
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
-                      Theme.of(context).colorScheme.secondary,
-                    ),
-                    foregroundColor: MaterialStateProperty.all(
-                      Theme.of(context).colorScheme.onSecondary,
-                    ),
-                  ),
-                  onPressed: () {},
-                  child: const Text("SYNC"),
-                ),
+              _button(
+                icon: Icons.note_add,
+                text: "New POI Set...",
+                onPressed: () async {
+                  var chosenPath = await FilePicker.platform.saveFile(
+                    dialogTitle: 'New Evresi POI Set File',
+                    fileName: 'Untitled.evpoi',
+                  );
+
+                  if (chosenPath != null) {
+                    await db.instance.close();
+
+                    await db.instance
+                        .open(chosenPath, db.EvresiDatabaseType.poiSet);
+                  }
+                },
               ),
-              const SizedBox(width: 8.0),
-              IconButton(
-                onPressed: () {},
-                splashRadius: 20.0,
-                icon: const Icon(Icons.settings),
-              )
+              _button(
+                icon: Icons.file_open,
+                text: "Open...",
+                onPressed: () async {
+                  var chosenPath = (await FilePicker.platform.pickFiles(
+                    dialogTitle: 'Open Evresi File',
+                    allowedExtensions: ["evtour", "evpoi"],
+                  ))
+                      ?.files
+                      .single
+                      .path;
+
+                  if (chosenPath != null) {
+                    await db.instance.close();
+
+                    var ext = path.extension(chosenPath);
+
+                    if (ext == ".evtour") {
+                      await db.instance
+                          .open(chosenPath, db.EvresiDatabaseType.tour);
+                    } else if (ext == ".evpoi") {
+                      await db.instance
+                          .open(chosenPath, db.EvresiDatabaseType.poiSet);
+                    } else {
+                      return;
+                    }
+                  }
+                },
+              ),
             ],
           ),
         ),
+        const Divider(
+          height: 2,
+          thickness: 2,
+          color: Color.fromARGB(255, 196, 202, 234),
+        )
       ],
     );
   }
-}
 
-class _SidebarHeader extends StatelessWidget {
-  const _SidebarHeader(this.text, {Key? key}) : super(key: key);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16.0,
-        vertical: 8.0,
+  Widget _button({
+    required IconData icon,
+    required String text,
+    required void Function() onPressed,
+  }) {
+    return RawMaterialButton(
+      onPressed: onPressed,
+      splashColor: const Color.fromARGB(0, 0, 0, 0),
+      highlightColor: const Color.fromARGB(20, 0, 0, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color.fromARGB(255, 82, 87, 115)),
+          const SizedBox(width: 8.0),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Color.fromARGB(255, 82, 87, 115),
+            ),
+          ),
+        ],
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color.fromARGB(255, 128, 128, 128),
-        ),
-      ),
-    );
-  }
-}
-
-class _SidebarItem extends StatelessWidget {
-  const _SidebarItem(
-    this.title, {
-    Key? key,
-    required this.leading,
-    required this.onTap,
-  }) : super(key: key);
-
-  final Widget leading;
-  final String title;
-  final void Function() onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: leading,
-      title: Text(
-        title,
-        softWrap: false,
-        overflow: TextOverflow.fade,
-      ),
-      onTap: onTap,
     );
   }
 }

@@ -23,7 +23,7 @@ mixin EvresiDatabaseGalleryMixin on EvresiDatabaseBase {
     return load<DbGallery, GalleryId, Gallery>(
       id: GalleryId(itemId),
       load: () async {
-        var items = await db.query(
+        var items = await db!.query(
           symGallery,
           columns: [symItem, symPath, symOrder],
           where: "$symItem = ?",
@@ -55,7 +55,7 @@ class DbGalleryAccessor {
   operator []=(int index, String value) {
     state.data.list[index] = value;
 
-    instance.db.update(
+    instance.db!.update(
       symGallery,
       {
         symPath: value,
@@ -70,7 +70,7 @@ class DbGalleryAccessor {
 
     state.data.list.add(path);
 
-    instance.db.insert(symGallery, {
+    instance.db!.insert(symGallery, {
       symItem: state.id.itemId.bytes,
       symPath: path,
       symOrder: order,
@@ -85,7 +85,7 @@ class DbGalleryAccessor {
 
     state.data.list = allPaths;
 
-    var batch = instance.db.batch();
+    var batch = instance.db!.batch();
 
     int order = 0;
     for (var path in allPaths) {
@@ -105,7 +105,7 @@ class DbGalleryAccessor {
   void remove(int index) {
     var path = state.data.list.removeAt(index);
 
-    instance.db.delete(
+    instance.db!.delete(
       symGallery,
       where: "$symItem = ? AND $symPath = ?",
       whereArgs: [state.id.itemId.bytes, path],

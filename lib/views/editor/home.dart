@@ -5,6 +5,25 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Text("Hello, world!");
+    final style = Theme.of(context).textTheme.bodyLarge!.copyWith(
+          fontSize: 28,
+          color: const Color.fromARGB(255, 94, 99, 124),
+        );
+    return Material(
+      color: const Color.fromARGB(255, 249, 250, 255),
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Welcome to the Evresi tour builder!", style: style),
+            const SizedBox(height: 16.0),
+            Text(
+                "To get started, try creating a tour by clicking 'New Tour...' in the top bar above.",
+                style: style),
+          ],
+        ),
+      ),
+    );
   }
 }

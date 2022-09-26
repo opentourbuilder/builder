@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'asset_db/asset_db.dart';
-import 'db/db.dart' as db;
 import 'theme.dart';
 import 'views/editor/editor.dart';
 
 Future<void> main() async {
   await initAssetDatabase();
-  await db.initEvresiDatabase();
   runApp(const MyApp());
 }
 

@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 import '/db/db.dart' as db;
 import '/db/models/tour.dart';
-import '/models/editor/tour.dart';
 import '/widgets/gallery_editor/gallery_editor.dart';
 import 'map.dart';
 import 'waypoints.dart';
 
 class TourEditor extends StatefulWidget {
-  const TourEditor({Key? key, required this.tourId}) : super(key: key);
-
-  final db.Uuid tourId;
+  const TourEditor({Key? key}) : super(key: key);
 
   @override
   State<TourEditor> createState() => _TourEditorState();
@@ -26,17 +23,14 @@ class _TourEditorState extends State<TourEditor> {
     return LayoutBuilder(builder: (context, constraints) {
       final contentEditor = _TourContentEditor(
         key: _contentEditorKey,
-        tourId: widget.tourId,
       );
 
       final map = TourMap(
         key: _mapKey,
-        tourId: widget.tourId,
       );
 
-      Widget child;
       if (constraints.maxWidth >= 800) {
-        child = Row(
+        return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             contentEditor,
@@ -48,7 +42,7 @@ class _TourEditorState extends State<TourEditor> {
           ],
         );
       } else {
-        child = DefaultTabController(
+        return DefaultTabController(
           length: 2,
           child: Column(
             children: [
@@ -72,22 +66,12 @@ class _TourEditorState extends State<TourEditor> {
           ),
         );
       }
-
-      return ChangeNotifierProvider(
-        create: (_) => TourEditorModel(tourId: widget.tourId),
-        child: child,
-      );
     });
   }
 }
 
 class _TourContentEditor extends StatefulWidget {
-  const _TourContentEditor({
-    Key? key,
-    required this.tourId,
-  }) : super(key: key);
-
-  final db.Uuid tourId;
+  const _TourContentEditor({super.key});
 
   @override
   State<_TourContentEditor> createState() => _TourContentEditorState();
@@ -100,7 +84,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
   @override
   void initState() {
     super.initState();
-    db.instance.tour(widget.tourId).then((tour) {
+    db.instance.tour().then((tour) {
       tour?.listen((() {
         setState(() {});
       }));
@@ -160,7 +144,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                   decoration: const InputDecoration(labelText: "Description"),
                 ),
                 const SizedBox(height: 16.0),
-                GalleryEditor(itemId: widget.tourId),
+                GalleryEditor(itemId: db.Uuid.zero),
               ],
             ),
           ),
@@ -168,10 +152,8 @@ class _TourContentEditorState extends State<_TourContentEditor> {
             height: 1,
             thickness: 1,
           ),
-          Expanded(
-            child: Waypoints(
-              tourId: widget.tourId,
-            ),
+          const Expanded(
+            child: Waypoints(),
           ),
         ],
       ),

@@ -2,19 +2,16 @@ import '../db.dart';
 import 'point.dart';
 
 class WaypointId {
-  const WaypointId(this.tourId, this.waypointId);
+  const WaypointId(this.waypointId);
 
-  final Uuid tourId;
   final Uuid waypointId;
 
   @override
-  int get hashCode => Object.hash(tourId, waypointId);
+  int get hashCode => waypointId.hashCode;
 
   @override
   operator ==(Object other) =>
-      other is WaypointId &&
-      other.tourId == tourId &&
-      other.waypointId == waypointId;
+      other is WaypointId && other.waypointId == waypointId;
 }
 
 class Waypoint {
@@ -49,13 +46,17 @@ class Waypoint {
 }
 
 mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
-  Future<DbWaypoint> createWaypoint(Uuid tourId, Waypoint data) async {
+  Future<DbWaypoint> createWaypoint(Waypoint data) async {
+    if (type != EvresiDatabaseType.tour) {
+      throw Exception(
+          "Attempted to use Tour-only method in non-Tour database.");
+    }
+
     var waypointId = Uuid.v4();
 
     // insert it with invalid order
-    await db.insert(symWaypoint, {
+    await db!.insert(symWaypoint, {
       symId: waypointId.bytes,
-      symTour: tourId.bytes,
       symOrder: null,
       symName: data.name,
       symDesc: data.desc,
@@ -66,9 +67,9 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
       symCreated: currentRevision.bytes,
     });
 
-    requestEvent(WaypointsEventDescriptor(tourId: tourId));
+    requestEvent(const WaypointsEventDescriptor());
 
-    var id = WaypointId(tourId, waypointId);
+    var id = WaypointId(waypointId);
 
     var state = DbObjectState(id, data);
     dbObjects[id] = state;
@@ -76,11 +77,16 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     return DbWaypoint._(state);
   }
 
-  Future<DbWaypoint?> waypoint(Uuid tourId, Uuid waypointId) async {
+  Future<DbWaypoint?> waypoint(Uuid waypointId) async {
+    if (type != EvresiDatabaseType.tour) {
+      throw Exception(
+          "Attempted to use Tour-only method in non-Tour database.");
+    }
+
     return load<DbWaypoint, WaypointId, Waypoint>(
-      id: WaypointId(tourId, waypointId),
+      id: WaypointId(waypointId),
       load: () async {
-        var rows = await instance.db.query(
+        var rows = await instance.db!.query(
           symWaypoint,
           columns: [symName, symDesc, symLat, symLng, symNarrationPath],
           where: "$symId = ?",
@@ -92,18 +98,23 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     );
   }
 
-  Future<void> deleteWaypoint(Uuid tourId, Uuid waypointId) async {
-    var obj = dbObjects.remove(WaypointId(tourId, waypointId));
+  Future<void> deleteWaypoint(Uuid waypointId) async {
+    if (type != EvresiDatabaseType.tour) {
+      throw Exception(
+          "Attempted to use Tour-only method in non-Tour database.");
+    }
+
+    var obj = dbObjects.remove(WaypointId(waypointId));
     obj?.markDeleted();
     obj?.notify(null);
 
-    await db.delete(
+    await db!.delete(
       symWaypoint,
-      where: "$symTour = ? AND $symId = ?",
-      whereArgs: [tourId.bytes, waypointId.bytes],
+      where: "$symId = ?",
+      whereArgs: [waypointId.bytes],
     );
 
-    requestEvent(WaypointsEventDescriptor(tourId: tourId));
+    requestEvent(const WaypointsEventDescriptor());
   }
 }
 
@@ -153,17 +164,17 @@ class DbWaypointAccessor implements DbPointAccessor {
   }
 
   void _changed() async {
-    await instance.db.update(
+    await instance.db!.update(
       symWaypoint,
       {
         ...state.data._toRow(),
         symRevision: instance.currentRevision.bytes,
       },
-      where: "$symTour = ? AND $symId = ?",
-      whereArgs: [state.id.tourId.bytes, state.id.waypointId.bytes],
+      where: "$symId = ?",
+      whereArgs: [state.id.waypointId.bytes],
     );
 
-    instance.requestEvent(WaypointsEventDescriptor(tourId: state.id.tourId));
+    instance.requestEvent(const WaypointsEventDescriptor());
 
     state.notify(object);
   }

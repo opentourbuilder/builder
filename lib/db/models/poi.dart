@@ -42,9 +42,13 @@ class Poi {
 
 mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   Future<DbPoi> createPoi(Poi data) async {
+    if (type != EvresiDatabaseType.poiSet) {
+      throw Exception("Attempted to use POI-only method in non-POI database.");
+    }
+
     var poiId = Uuid.v4();
 
-    await db.insert(symPoi, {
+    await db!.insert(symPoi, {
       symId: poiId.bytes,
       symName: data.name,
       symDesc: data.desc,
@@ -65,10 +69,14 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   }
 
   Future<DbPoi?> poi(Uuid poiId) async {
+    if (type != EvresiDatabaseType.poiSet) {
+      throw Exception("Attempted to use POI-only method in non-POI database.");
+    }
+
     return load<DbPoi, PoiId, Poi>(
       id: PoiId(poiId),
       load: () async {
-        var rows = await instance.db.query(
+        var rows = await instance.db!.query(
           symPoi,
           columns: [symName, symDesc, symLat, symLng],
           where: "$symId = ?",
@@ -81,9 +89,13 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   }
 
   Future<void> deletePoi(Uuid poiId) async {
+    if (type != EvresiDatabaseType.poiSet) {
+      throw Exception("Attempted to use POI-only method in non-POI database.");
+    }
+
     dbObjects.remove(PoiId(poiId));
 
-    await db.delete(
+    await db!.delete(
       symPoi,
       where: "$symId = ?",
       whereArgs: [poiId.bytes],
@@ -133,7 +145,7 @@ class DbPoiAccessor implements DbPointAccessor {
   }
 
   void _changed() async {
-    await instance.db.update(
+    await instance.db!.update(
       symPoi,
       {
         ...state.data._toRow(),

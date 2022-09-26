@@ -101,7 +101,7 @@ class _LocationFieldState extends State<LocationField> {
   void didUpdateWidget(covariant LocationField oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.point?.changed == true) {
+    if (oldWidget.point != widget.point || widget.point?.changed == true) {
       lat = widget.point?.data?.lat ?? 0;
       lng = widget.point?.data?.lng ?? 0;
       latController.text = '$lat';

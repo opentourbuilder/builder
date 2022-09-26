@@ -10,12 +10,7 @@ import '/router.dart';
 import '/widgets/map_icon.dart';
 
 class TourMap extends StatefulWidget {
-  const TourMap({
-    Key? key,
-    required this.tourId,
-  }) : super(key: key);
-
-  final db.Uuid tourId;
+  const TourMap({super.key});
 
   @override
   State<TourMap> createState() => _TourMapState();
@@ -37,8 +32,7 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
     super.initState();
 
     _eventsSubscription = db.instance.events.listen(_onEvent);
-    db.instance
-        .requestEvent(db.WaypointsEventDescriptor(tourId: widget.tourId));
+    db.instance.requestEvent(const db.WaypointsEventDescriptor());
   }
 
   @override
@@ -48,7 +42,7 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   }
 
   void _onEvent(db.Event event) {
-    if (event.desc == db.WaypointsEventDescriptor(tourId: widget.tourId)) {
+    if (event.desc == const db.WaypointsEventDescriptor()) {
       setState(() {
         _waypoints = event.value;
       });
@@ -101,7 +95,7 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                 height: 40,
                 preservePosition: false,
                 onDragEnd: (details, point) {
-                  db.instance.waypoint(widget.tourId, waypoint.value.id).then(
+                  db.instance.waypoint(waypoint.value.id).then(
                     (loadedWaypoint) {
                       loadedWaypoint?.data?.lat = point.latitude;
                       loadedWaypoint?.data?.lng = point.longitude;
