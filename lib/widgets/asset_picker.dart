@@ -41,7 +41,9 @@ class _AssetPickerState extends State<AssetPicker> {
   void didUpdateWidget(covariant AssetPicker oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    controller.text = widget.selectedAssetName ?? "";
+    if (widget.selectedAssetName != oldWidget.selectedAssetName) {
+      controller.text = widget.selectedAssetName ?? "";
+    }
   }
 
   @override
@@ -53,35 +55,36 @@ class _AssetPickerState extends State<AssetPicker> {
           Expanded(
             child: LayoutBuilder(builder: (context, constraints) {
               return RawAutocomplete<Asset>(
-                textEditingController: controller,
-                focusNode: focusNode,
-                displayStringForOption: (asset) => asset.name,
-                optionsViewBuilder: (context, onSelected, options) =>
-                    _autocompleteOptionsBuilder(
-                        context, onSelected, options, constraints.maxWidth),
-                fieldViewBuilder: (context, textEditingController, focusNode,
-                    onFieldSubmitted) {
-                  return TextField(
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: const Color(0xFFFFFFFF),
-                      hoverColor: const Color(0xFFFFFFFF),
-                      labelText: widget.type == AssetType.image
-                          ? "Image"
-                          : widget.type == AssetType.narration
-                              ? "Narration"
-                              : "Asset",
-                      hintText: "Search for an asset...",
-                    ),
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    onSubmitted: (_) => onFieldSubmitted(),
-                  );
-                },
-                optionsBuilder: (value) =>
-                    assetDbInstance.list(value.text, widget.type),
-                onSelected: widget.onAssetSelected,
-              );
+                  textEditingController: controller,
+                  focusNode: focusNode,
+                  displayStringForOption: (asset) => asset.name,
+                  optionsViewBuilder: (context, onSelected, options) =>
+                      _autocompleteOptionsBuilder(
+                          context, onSelected, options, constraints.maxWidth),
+                  fieldViewBuilder: (context, textEditingController, focusNode,
+                      onFieldSubmitted) {
+                    return TextField(
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFFFFFFFF),
+                        hoverColor: const Color(0xFFFFFFFF),
+                        labelText: widget.type == AssetType.image
+                            ? "Image"
+                            : widget.type == AssetType.narration
+                                ? "Narration"
+                                : "Asset",
+                        hintText: "Search for an asset...",
+                      ),
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      onSubmitted: (_) => onFieldSubmitted(),
+                    );
+                  },
+                  optionsBuilder: (value) =>
+                      assetDbInstance.list(value.text, widget.type),
+                  onSelected: (asset) {
+                    widget.onAssetSelected(asset);
+                  });
             }),
           ),
           const SizedBox(width: 8.0),
@@ -199,9 +202,12 @@ class _AssetPickerState extends State<AssetPicker> {
   }
 
   void _addNewAsset() async {
-    var pickResult = await FilePicker.platform.pickFiles(allowedExtensions: [
-      ...AssetType.extensionMap.keys.map((e) => e.replaceFirst(r"\.", ""))
-    ]);
+    var pickResult = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [
+        ...AssetType.extensionMap.keys.map((e) => e.substring(1))
+      ],
+    );
 
     var path = pickResult?.files.single.path;
 
