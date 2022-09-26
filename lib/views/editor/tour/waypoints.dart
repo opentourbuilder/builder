@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:builder/widgets/gallery_editor/gallery_editor.dart';
 import 'package:flutter/material.dart';
 
 import '/db/db.dart' as db;
@@ -286,6 +287,9 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                     LocationField(
                       point: waypoint,
                     ),
+                    const SizedBox(height: 16.0),
+                    if (widget.selectedWaypoint != null)
+                      GalleryEditor(itemId: widget.selectedWaypoint!),
                     const SizedBox(height: 16.0),
                     ElevatedButton(
                       child: UnconstrainedBox(
