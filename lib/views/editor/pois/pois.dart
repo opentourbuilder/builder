@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:builder/widgets/gallery_editor/gallery_editor.dart';
 import 'package:flutter/material.dart';
 
 import '/db/db.dart' as db;
@@ -343,6 +344,9 @@ class _PoiEditorState extends State<_PoiEditor> {
                     LocationField(
                       point: poi,
                     ),
+                    const SizedBox(height: 16.0),
+                    if (widget.selectedPoi != null)
+                      GalleryEditor(itemId: widget.selectedPoi!),
                     const SizedBox(height: 16.0),
                     ElevatedButton(
                       child: UnconstrainedBox(
