@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../db.dart';
 import 'point.dart';
 
@@ -12,6 +14,13 @@ class WaypointId {
   @override
   operator ==(Object other) =>
       other is WaypointId && other.waypointId == waypointId;
+}
+
+class WaypointWithId {
+  const WaypointWithId({required this.id, required this.waypoint});
+
+  final Uuid id;
+  final Waypoint waypoint;
 }
 
 class Waypoint {
@@ -86,7 +95,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     return load<DbWaypoint, WaypointId, Waypoint>(
       id: WaypointId(waypointId),
       load: () async {
-        var rows = await instance.db!.query(
+        var rows = await db!.query(
           symWaypoint,
           columns: [symName, symDesc, symLat, symLng, symNarrationPath],
           where: "$symId = ?",
@@ -115,6 +124,23 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     );
 
     requestEvent(const WaypointsEventDescriptor());
+  }
+
+  Future<List<WaypointWithId>> listWaypoints() async {
+    if (type != EvresiDatabaseType.tour) {
+      throw Exception(
+          "Attempted to use Tour-only method in non-Tour database.");
+    }
+
+    return (await db!.query(
+      symWaypoint,
+      columns: [symId, symName, symDesc, symLat, symLng, symNarrationPath],
+    ))
+        .map((row) => WaypointWithId(
+              id: Uuid(row[symId]! as Uint8List),
+              waypoint: Waypoint._fromRow(row),
+            ))
+        .toList();
   }
 }
 

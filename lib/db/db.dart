@@ -30,6 +30,7 @@ class EvresiDatabase = EvresiDatabaseBase
         EvresiDatabasePoiMixin;
 
 class EvresiDatabaseBase {
+  String? dbPath;
   Database? db;
   EvresiDatabaseType? type;
 
@@ -51,6 +52,7 @@ class EvresiDatabaseBase {
   }
 
   Future<void> open(String path, EvresiDatabaseType type) async {
+    dbPath = path;
     this.type = type;
     db = await databaseFactoryFfi.openDatabase(
       path,
@@ -72,6 +74,7 @@ class EvresiDatabaseBase {
   }
 
   Future<void> close() async {
+    dbPath = null;
     type = null;
     await db?.close();
   }

@@ -42,17 +42,17 @@ mixin EvresiDatabaseTourMixin on EvresiDatabaseBase {
     return load<DbTour, TourId, Tour>(
       id: const TourId(),
       load: () async {
-        var rows = await instance.db!.query(
+        var rows = await db!.query(
           symTour,
           columns: [symName, symDesc],
         );
 
         if (rows.isEmpty) {
-          await instance.db!.insert(symTour, {
+          await db!.insert(symTour, {
             symName: _blankTour.name,
             symDesc: _blankTour.desc,
-            symRevision: instance.currentRevision.bytes,
-            symCreated: instance.currentRevision.bytes,
+            symRevision: currentRevision.bytes,
+            symCreated: currentRevision.bytes,
           });
 
           return _blankTour;

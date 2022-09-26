@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../db.dart';
 import 'point.dart';
 
@@ -11,6 +13,13 @@ class PoiId {
 
   @override
   operator ==(Object other) => other is PoiId && other.poiId == poiId;
+}
+
+class PoiWithId {
+  const PoiWithId({required this.id, required this.poi});
+
+  final Uuid id;
+  final Poi poi;
 }
 
 class Poi {
@@ -102,6 +111,18 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
     );
 
     requestEvent(const PoisEventDescriptor());
+  }
+
+  Future<List<PoiWithId>> listPois() async {
+    return (await instance.db!.query(
+      symPoi,
+      columns: [symId, symName, symDesc, symLat, symLng],
+    ))
+        .map((row) => PoiWithId(
+              id: Uuid(row[symId]! as Uint8List),
+              poi: Poi._fromRow(row),
+            ))
+        .toList();
   }
 }
 

@@ -1,12 +1,11 @@
-import 'dart:async';
+import 'dart:io';
 
+import 'package:builder/db/export.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 import '/db/db.dart' as db;
-import '/db/models/tour.dart';
-import '/utils/evresi_page_route.dart';
 import '/views/editor/pois/pois.dart';
 import 'home.dart';
 import 'tour/tour.dart';
@@ -55,7 +54,27 @@ class _EditorPageState extends State<EditorPage> {
     return Scaffold(
       body: Column(
         children: [
-          const TopBar(),
+          TopBar(
+            onExportStart: () {
+              Navigator.of(context).push(DialogRoute(
+                context: context,
+                builder: (context) {
+                  return const Center(
+                    child: SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                },
+              ));
+            },
+            onExportFinish: () {
+              Navigator.of(context).pop();
+            },
+          ),
           Expanded(
             child: Row(
               children: [
@@ -72,7 +91,14 @@ class _EditorPageState extends State<EditorPage> {
 }
 
 class TopBar extends StatelessWidget {
-  const TopBar({super.key});
+  const TopBar({
+    super.key,
+    required this.onExportStart,
+    required this.onExportFinish,
+  });
+
+  final void Function() onExportStart;
+  final void Function() onExportFinish;
 
   @override
   Widget build(BuildContext context) {
@@ -144,6 +170,34 @@ class TopBar extends StatelessWidget {
                     } else {
                       return;
                     }
+                  }
+                },
+              ),
+              _button(
+                icon: Icons.upload_file,
+                text: "Export...",
+                onPressed: () async {
+                  var chosenFiles = (await FilePicker.platform.pickFiles(
+                    dialogTitle: 'Choose Evresi Files to Export',
+                    allowedExtensions: ["evtour", "evpoi"],
+                    allowMultiple: true,
+                  ))
+                      ?.files;
+
+                  if (chosenFiles != null) {
+                    onExportStart();
+                    var jsonString = await exportToJson(
+                        <String>[...chosenFiles.map((e) => e.path!)]);
+
+                    var chosenPath = await FilePicker.platform.saveFile(
+                      dialogTitle: 'Save Export',
+                      fileName: 'export.json',
+                    );
+
+                    if (chosenPath != null) {
+                      await File(chosenPath).writeAsString(jsonString);
+                    }
+                    onExportFinish();
                   }
                 },
               ),

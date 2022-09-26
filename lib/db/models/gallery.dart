@@ -65,6 +65,10 @@ class DbGalleryAccessor {
     );
   }
 
+  List<String> list() {
+    return List.unmodifiable(state.data.list);
+  }
+
   void add(String path) {
     var order = state.data.list.length;
 
