@@ -59,8 +59,9 @@ abstract class DbObject<DataAccessor, Id, Data> {
 }
 
 class DbObjectState<Id, Data> {
-  DbObjectState(this.id, this.data);
+  DbObjectState(this.db, this.id, this.data);
 
+  final EvresiDatabaseBase db;
   final Id id;
   final Data data;
   final Map<Object, void Function(bool deleted)> _instances = {};
@@ -85,7 +86,7 @@ class DbObjectState<Id, Data> {
     _instances.remove(key);
 
     if (_instances.isEmpty) {
-      instance.dbObjects.remove(id);
+      db.dbObjects.remove(id);
     }
   }
 

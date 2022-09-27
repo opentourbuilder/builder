@@ -55,7 +55,7 @@ class DbGalleryAccessor {
   operator []=(int index, String value) {
     state.data.list[index] = value;
 
-    instance.db!.update(
+    state.db.db!.update(
       symGallery,
       {
         symPath: value,
@@ -74,7 +74,7 @@ class DbGalleryAccessor {
 
     state.data.list.add(path);
 
-    instance.db!.insert(symGallery, {
+    state.db.db!.insert(symGallery, {
       symItem: state.id.itemId.bytes,
       symPath: path,
       symOrder: order,
@@ -89,7 +89,7 @@ class DbGalleryAccessor {
 
     state.data.list = allPaths;
 
-    var batch = instance.db!.batch();
+    var batch = state.db.db!.batch();
 
     int order = 0;
     for (var path in allPaths) {
@@ -109,7 +109,7 @@ class DbGalleryAccessor {
   void remove(int index) {
     var path = state.data.list.removeAt(index);
 
-    instance.db!.delete(
+    state.db.db!.delete(
       symGallery,
       where: "$symItem = ? AND $symPath = ?",
       whereArgs: [state.id.itemId.bytes, path],

@@ -102,7 +102,7 @@ class EvresiDatabaseBase {
       var data = await load();
 
       if (data != null) {
-        var state = DbObjectState(id, data);
+        var state = DbObjectState(this, id, data);
         dbObjects[id] = state;
         return createObject(state);
       } else {

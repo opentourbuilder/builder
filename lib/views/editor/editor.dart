@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -225,18 +223,10 @@ class TopBar extends StatelessWidget {
                 );
               },
             ),
-            Expanded(
-              child: MoveWindow(
-                child: Row(
-                  children: [
-                    const Expanded(child: SizedBox()),
-                    MinimizeWindowButton(colors: buttonColors),
-                    MaximizeWindowButton(colors: buttonColors),
-                    CloseWindowButton(colors: buttonColors),
-                  ],
-                ),
-              ),
-            ),
+            Expanded(child: MoveWindow()),
+            MinimizeWindowButton(colors: buttonColors),
+            MaximizeWindowButton(colors: buttonColors),
+            CloseWindowButton(colors: buttonColors),
           ],
         ),
       ),

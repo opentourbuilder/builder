@@ -89,11 +89,11 @@ class DbTourAccessor {
   }
 
   void _changed() async {
-    await instance.db!.update(
+    await state.db.db!.update(
       symTour,
       {
         ...state.data._toRow(),
-        symRevision: instance.currentRevision.bytes,
+        symRevision: state.db.currentRevision.bytes,
       },
     );
 

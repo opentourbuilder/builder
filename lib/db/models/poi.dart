@@ -71,7 +71,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
 
     var id = PoiId(poiId);
 
-    var state = DbObjectState(id, data);
+    var state = DbObjectState(this, id, data);
     dbObjects[id] = state;
 
     return DbPoi._(state);
@@ -85,7 +85,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
     return load<DbPoi, PoiId, Poi>(
       id: PoiId(poiId),
       load: () async {
-        var rows = await instance.db!.query(
+        var rows = await db!.query(
           symPoi,
           columns: [symName, symDesc, symLat, symLng],
           where: "$symId = ?",
@@ -114,7 +114,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   }
 
   Future<List<PoiWithId>> listPois() async {
-    return (await instance.db!.query(
+    return (await db!.query(
       symPoi,
       columns: [symId, symName, symDesc, symLat, symLng],
     ))
@@ -166,17 +166,17 @@ class DbPoiAccessor implements DbPointAccessor {
   }
 
   void _changed() async {
-    await instance.db!.update(
+    await state.db.db!.update(
       symPoi,
       {
         ...state.data._toRow(),
-        symRevision: instance.currentRevision.bytes,
+        symRevision: state.db.currentRevision.bytes,
       },
       where: "$symId = ?",
       whereArgs: [state.id.poiId.bytes],
     );
 
-    instance.requestEvent(const PoisEventDescriptor());
+    state.db.requestEvent(const PoisEventDescriptor());
 
     state.notify(object);
   }

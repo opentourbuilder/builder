@@ -80,7 +80,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
 
     var id = WaypointId(waypointId);
 
-    var state = DbObjectState(id, data);
+    var state = DbObjectState(this, id, data);
     dbObjects[id] = state;
 
     return DbWaypoint._(state);
@@ -190,17 +190,17 @@ class DbWaypointAccessor implements DbPointAccessor {
   }
 
   void _changed() async {
-    await instance.db!.update(
+    await state.db.db!.update(
       symWaypoint,
       {
         ...state.data._toRow(),
-        symRevision: instance.currentRevision.bytes,
+        symRevision: state.db.currentRevision.bytes,
       },
       where: "$symId = ?",
       whereArgs: [state.id.waypointId.bytes],
     );
 
-    instance.requestEvent(const WaypointsEventDescriptor());
+    state.db.requestEvent(const WaypointsEventDescriptor());
 
     state.notify(object);
   }
