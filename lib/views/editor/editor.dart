@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 import '/db/db.dart' as db;
-import '/db/export.dart';
+import '../../utils/export.dart';
 import '/views/editor/export.dart';
 import '/views/editor/pois/pois.dart';
 import 'home.dart';
@@ -74,30 +74,26 @@ class _EditorPageState extends State<EditorPage> {
     }
 
     return Scaffold(
-      body: WindowBorder(
-        color: const Color.fromARGB(255, 168, 174, 207),
-        width: 1,
-        child: Column(
-          children: [
-            TopBar(
-              onExportStart: () {
-                setState(() => _currentPage = _CurrentPage.exporting);
-              },
-              onExportFinish: () {
-                setState(() => _currentPage = _CurrentPage.finishedExport);
-              },
+      body: Column(
+        children: [
+          TopBar(
+            onExportStart: () {
+              setState(() => _currentPage = _CurrentPage.exporting);
+            },
+            onExportFinish: () {
+              setState(() => _currentPage = _CurrentPage.finishedExport);
+            },
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: child,
+                ),
+              ],
             ),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: child,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -115,154 +111,166 @@ class TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        WindowTitleBarBox(
-          child: MoveWindow(
-            child: Container(
-              color: const Color.fromARGB(255, 233, 236, 255),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _button(
-                    icon: Icons.note_add_outlined,
-                    text: "New Tour...",
-                    onPressed: () async {
-                      var chosenPath = await FilePicker.platform.saveFile(
-                        dialogTitle: 'New Evresi Tour File',
-                        fileName: 'Untitled.evtour',
-                        type: FileType.custom,
-                        allowedExtensions: ["evtour"],
-                      );
+    final WindowButtonColors buttonColors = WindowButtonColors(
+      normal: Colors.transparent,
+      mouseOver: const Color.fromARGB(48, 0, 0, 0),
+      mouseDown: const Color.fromARGB(96, 0, 0, 0),
+      iconNormal: const Color.fromARGB(255, 237, 239, 255),
+      iconMouseOver: const Color.fromARGB(255, 237, 239, 255),
+      iconMouseDown: const Color.fromARGB(255, 237, 239, 255),
+    );
 
-                      if (chosenPath != null) {
-                        await db.instance.close();
+    return WindowTitleBarBox(
+      child: Container(
+        color: Theme.of(context).colorScheme.primary,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _button(
+              context,
+              icon: Icons.note_add_outlined,
+              text: "New Tour...",
+              onPressed: () async {
+                var chosenPath = await FilePicker.platform.saveFile(
+                  dialogTitle: 'New Evresi Tour File',
+                  fileName: 'Untitled.evtour',
+                  type: FileType.custom,
+                  allowedExtensions: ["evtour"],
+                );
 
-                        await db.instance
-                            .open(chosenPath, db.EvresiDatabaseType.tour);
-                      }
-                    },
-                  ),
-                  _button(
-                    icon: Icons.note_add_outlined,
-                    text: "New POI Set...",
-                    onPressed: () async {
-                      var chosenPath = await FilePicker.platform.saveFile(
-                        dialogTitle: 'New Evresi POI Set File',
-                        fileName: 'Untitled.evpoi',
-                        type: FileType.custom,
-                        allowedExtensions: ["evpoi"],
-                      );
+                if (chosenPath != null) {
+                  await db.instance.close();
 
-                      if (chosenPath != null) {
-                        await db.instance.close();
+                  await db.instance
+                      .open(chosenPath, db.EvresiDatabaseType.tour);
+                }
+              },
+            ),
+            _button(
+              context,
+              icon: Icons.note_add_outlined,
+              text: "New POI Set...",
+              onPressed: () async {
+                var chosenPath = await FilePicker.platform.saveFile(
+                  dialogTitle: 'New Evresi POI Set File',
+                  fileName: 'Untitled.evpoi',
+                  type: FileType.custom,
+                  allowedExtensions: ["evpoi"],
+                );
 
-                        await db.instance
-                            .open(chosenPath, db.EvresiDatabaseType.poiSet);
-                      }
-                    },
-                  ),
-                  _button(
-                    icon: Icons.file_open_outlined,
-                    text: "Open...",
-                    onPressed: () async {
-                      var chosenPath = (await FilePicker.platform.pickFiles(
-                        dialogTitle: 'Open Evresi File',
-                        type: FileType.custom,
-                        allowedExtensions: ["evtour", "evpoi"],
-                      ))
-                          ?.files
-                          .single
-                          .path;
+                if (chosenPath != null) {
+                  await db.instance.close();
 
-                      if (chosenPath != null) {
-                        await db.instance.close();
+                  await db.instance
+                      .open(chosenPath, db.EvresiDatabaseType.poiSet);
+                }
+              },
+            ),
+            _button(
+              context,
+              icon: Icons.file_open_outlined,
+              text: "Open...",
+              onPressed: () async {
+                var chosenPath = (await FilePicker.platform.pickFiles(
+                  dialogTitle: 'Open Evresi File',
+                  type: FileType.custom,
+                  allowedExtensions: ["evtour", "evpoi"],
+                ))
+                    ?.files
+                    .single
+                    .path;
 
-                        var ext = path.extension(chosenPath);
+                if (chosenPath != null) {
+                  await db.instance.close();
 
-                        if (ext == ".evtour") {
-                          await db.instance
-                              .open(chosenPath, db.EvresiDatabaseType.tour);
-                        } else if (ext == ".evpoi") {
-                          await db.instance
-                              .open(chosenPath, db.EvresiDatabaseType.poiSet);
-                        } else {
-                          return;
-                        }
-                      }
-                    },
-                  ),
-                  _button(
-                    icon: Icons.upload_file_outlined,
-                    text: "Export...",
-                    onPressed: () async {
-                      var chosenFiles = (await FilePicker.platform.pickFiles(
-                        dialogTitle: 'Choose Evresi Files to Export',
-                        type: FileType.custom,
-                        allowedExtensions: ["evtour", "evpoi"],
-                        allowMultiple: true,
-                      ))
-                          ?.files;
+                  var ext = path.extension(chosenPath);
 
-                      if (chosenFiles != null) {
-                        onExportStart();
-                        var jsonString = await exportToJson(
-                            <String>[...chosenFiles.map((e) => e.path!)]);
-                        onExportFinish();
-
-                        var chosenPath = await FilePicker.platform.saveFile(
-                          dialogTitle: 'Save Export',
-                          fileName: 'export.json',
-                        );
-
-                        if (chosenPath != null) {
-                          await File(chosenPath).writeAsString(jsonString);
-                        }
-                      }
-                    },
-                  ),
-                  const Expanded(child: SizedBox()),
-                  MinimizeWindowButton(),
-                  MaximizeWindowButton(),
-                  CloseWindowButton(),
-                ],
+                  if (ext == ".evtour") {
+                    await db.instance
+                        .open(chosenPath, db.EvresiDatabaseType.tour);
+                  } else if (ext == ".evpoi") {
+                    await db.instance
+                        .open(chosenPath, db.EvresiDatabaseType.poiSet);
+                  } else {
+                    return;
+                  }
+                }
+              },
+            ),
+            _button(
+              context,
+              icon: Icons.upload_file_outlined,
+              text: "Export...",
+              onPressed: () {
+                onExportStart();
+                export(
+                  onFinish: onExportFinish,
+                  promptForSourceFiles: () async {
+                    return (await FilePicker.platform.pickFiles(
+                      dialogTitle: 'Choose Evresi Files to Export',
+                      type: FileType.custom,
+                      allowedExtensions: ["evtour", "evpoi"],
+                      allowMultiple: true,
+                    ))
+                        ?.files
+                        .map((e) => e.path!)
+                        .toList();
+                  },
+                  promptForDestFile: () async {
+                    return await FilePicker.platform.saveFile(
+                      dialogTitle: 'Save Export',
+                      fileName: 'export.json',
+                    );
+                  },
+                );
+              },
+            ),
+            Expanded(
+              child: MoveWindow(
+                child: Row(
+                  children: [
+                    const Expanded(child: SizedBox()),
+                    MinimizeWindowButton(colors: buttonColors),
+                    MaximizeWindowButton(colors: buttonColors),
+                    CloseWindowButton(colors: buttonColors),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
-        const Divider(
-          height: 1,
-          thickness: 1,
-          color: Color.fromARGB(255, 168, 174, 207),
-        )
-      ],
+      ),
     );
   }
 
-  Widget _button({
+  Widget _button(
+    BuildContext context, {
     required IconData icon,
     required String text,
     required void Function() onPressed,
   }) {
+    const color = Color.fromARGB(255, 237, 239, 255);
+
     return RawMaterialButton(
       onPressed: onPressed,
       splashColor: const Color.fromARGB(0, 0, 0, 0),
-      highlightColor: const Color.fromARGB(20, 0, 0, 0),
+      hoverColor: const Color.fromARGB(48, 0, 0, 0),
+      highlightColor: const Color.fromARGB(48, 0, 0, 0),
       padding: const EdgeInsets.symmetric(horizontal: 6.0),
       child: Row(
         children: [
           Icon(
             icon,
-            color: const Color.fromARGB(255, 82, 87, 115),
+            color: color,
             size: 20,
           ),
           const SizedBox(width: 4.0),
           Text(
             text,
-            style: const TextStyle(
-              color: Color.fromARGB(255, 82, 87, 115),
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.button!.copyWith(
+                  color: color,
+                  fontSize: 13,
+                ),
           ),
         ],
       ),

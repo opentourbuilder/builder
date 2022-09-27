@@ -48,6 +48,7 @@ dependencies:
         ref: master
   maps_toolkit: ^2.0.0
   google_fonts: ^3.0.0
+  archive: ^3.3.1
   file_picker: ^5.1.0
   bitsdojo_window: ^0.1.5
 

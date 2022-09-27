@@ -188,7 +188,7 @@ class AddressModalRoute extends ModalRoute {
   bool get opaque => false;
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 200);
+  Duration get transitionDuration => Duration.zero;
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation,

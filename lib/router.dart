@@ -61,6 +61,10 @@ class ValhallaRouter implements Router {
         .then((spawned) => worker = spawned);
   }
 
+  void dispose() {
+    events.cancel();
+  }
+
   @override
   Future<List<LatLng>> route(Iterable<LatLng> waypoints) async {
     final requestJson = {

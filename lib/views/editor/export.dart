@@ -8,13 +8,13 @@ class ExportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.bodyLarge!.copyWith(
-          fontSize: 28,
+          fontSize: 20,
           color: const Color.fromARGB(255, 94, 99, 124),
         );
     return Material(
       color: const Color.fromARGB(255, 249, 250, 255),
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

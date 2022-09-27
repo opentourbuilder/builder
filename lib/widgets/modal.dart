@@ -15,8 +15,8 @@ class Modal extends StatelessWidget {
     return Material(
       type: MaterialType.card,
       shadowColor: Theme.of(context).colorScheme.shadow,
-      elevation: 4.0,
-      surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+      elevation: 8.0,
+      color: const Color.fromARGB(255, 245, 247, 255),
       borderRadius: BorderRadius.circular(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -24,8 +24,7 @@ class Modal extends StatelessWidget {
         children: [
           Material(
             type: MaterialType.card,
-            elevation: 8.0,
-            surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+            color: const Color.fromARGB(255, 234, 236, 255),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(8.0),
               topRight: Radius.circular(8.0),
@@ -39,8 +38,9 @@ class Modal extends StatelessWidget {
             ),
           ),
           const Divider(
-            height: 2.0,
-            thickness: 2.0,
+            height: 1.0,
+            thickness: 1.0,
+            color: Color.fromARGB(255, 211, 212, 229),
           ),
           child,
         ],

@@ -211,16 +211,7 @@ class _PoiState extends State<_Poi> {
                 widget.summary.name!,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              Expanded(child: Container()),
-              RawMaterialButton(
-                focusColor: const Color(0x10000088),
-                highlightColor: const Color(0x08000088),
-                hoverColor: const Color(0x08000088),
-                splashColor: const Color(0x08000088),
-                constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                onPressed: () {},
-                child: const Icon(Icons.location_pin),
-              ),
+              const Expanded(child: SizedBox()),
               RawMaterialButton(
                 focusColor: const Color(0x10000088),
                 highlightColor: const Color(0x08000088),

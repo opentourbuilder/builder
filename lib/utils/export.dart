@@ -1,11 +1,36 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:archive/archive_io.dart';
+import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mtk;
 import 'package:path/path.dart' as path;
 
-import 'db.dart';
+import '/asset_db/asset_db.dart';
+import '/router.dart';
+import '../db/db.dart';
+
+Future<void> export({
+  required void Function() onFinish,
+  required Future<List<String>?> Function() promptForSourceFiles,
+  required Future<String?> Function() promptForDestFile,
+}) async {
+  var sourceFiles = await promptForSourceFiles();
+  if (sourceFiles == null) return;
+
+  var jsonString = await exportToJson(sourceFiles);
+
+  onFinish();
+  var destFile = await promptForDestFile();
+  if (destFile == null) return;
+
+  await File(destFile).writeAsString(jsonString);
+}
 
 Future<String> exportToJson(List<String> paths) async {
-  EvresiDatabase db = EvresiDatabase();
+  var db = EvresiDatabase();
+  var router = ValhallaRouter();
 
   var json = {
     "tours": [],
@@ -40,7 +65,9 @@ Future<String> exportToJson(List<String> paths) async {
       tourObj["gallery"] = tourGallery!.data!.list();
       tourGallery.dispose();
 
-      for (var waypointWithId in await db.listWaypoints()) {
+      var waypoints = await db.listWaypoints();
+
+      for (var waypointWithId in waypoints) {
         var id = waypointWithId.id;
         var waypoint = waypointWithId.waypoint;
 
@@ -58,6 +85,15 @@ Future<String> exportToJson(List<String> paths) async {
 
         tourObj["waypoints"]!.add(waypointObj);
       }
+
+      var path = await router
+          .route(waypoints.map((w) => LatLng(w.waypoint.lat, w.waypoint.lng)));
+
+      var pathString = mtk.PolygonUtil.encode(path
+          .map((ll) => mtk.LatLng(ll.latitude, ll.longitude))
+          .toList(growable: false));
+
+      tourObj["path"] = pathString;
 
       json["tours"]!.add(tourObj);
 
@@ -85,5 +121,32 @@ Future<String> exportToJson(List<String> paths) async {
     await db.close();
   }
 
+  router.dispose();
+
   return jsonEncode(json);
+}
+
+Future<void> bundle(String outputPath, List<String> assetNames) async {
+  await compute<_Message, void>(_runBundle, _Message(outputPath, assetNames));
+}
+
+Future<void> _runBundle(_Message message) async {
+  var zipEncoder = ZipFileEncoder();
+
+  zipEncoder.open(message.outputPath);
+
+  var assets = await assetDbInstance.list();
+  assets.removeWhere((element) => !message.assetNames.contains(element.name));
+  for (var asset in assets) {
+    zipEncoder.addFile(File(asset.fullPath), asset.name);
+  }
+
+  zipEncoder.close();
+}
+
+class _Message {
+  const _Message(this.outputPath, this.assetNames);
+
+  final String outputPath;
+  final List<String> assetNames;
 }
