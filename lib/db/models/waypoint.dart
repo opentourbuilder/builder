@@ -64,7 +64,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     var waypointId = Uuid.v4();
 
     // insert it with invalid order
-    await db!.insert(symWaypoint, {
+    await db.insert(symWaypoint, {
       symId: waypointId.bytes,
       symOrder: null,
       symName: data.name,
@@ -95,7 +95,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     return load<DbWaypoint, WaypointId, Waypoint>(
       id: WaypointId(waypointId),
       load: () async {
-        var rows = await db!.query(
+        var rows = await db.query(
           symWaypoint,
           columns: [symName, symDesc, symLat, symLng, symNarrationPath],
           where: "$symId = ?",
@@ -117,7 +117,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     obj?.markDeleted();
     obj?.notify(null);
 
-    await db!.delete(
+    await db.delete(
       symWaypoint,
       where: "$symId = ?",
       whereArgs: [waypointId.bytes],
@@ -132,7 +132,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
           "Attempted to use Tour-only method in non-Tour database.");
     }
 
-    return (await db!.query(
+    return (await db.query(
       symWaypoint,
       columns: [symId, symName, symDesc, symLat, symLng, symNarrationPath],
     ))
@@ -190,7 +190,7 @@ class DbWaypointAccessor implements DbPointAccessor {
   }
 
   void _changed() async {
-    await state.db.db!.update(
+    await state.db.db.update(
       symWaypoint,
       {
         ...state.data._toRow(),

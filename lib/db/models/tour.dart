@@ -42,13 +42,13 @@ mixin EvresiDatabaseTourMixin on EvresiDatabaseBase {
     return load<DbTour, TourId, Tour>(
       id: const TourId(),
       load: () async {
-        var rows = await db!.query(
+        var rows = await db.query(
           symTour,
           columns: [symName, symDesc],
         );
 
         if (rows.isEmpty) {
-          await db!.insert(symTour, {
+          await db.insert(symTour, {
             symName: _blankTour.name,
             symDesc: _blankTour.desc,
             symRevision: currentRevision.bytes,
@@ -89,7 +89,7 @@ class DbTourAccessor {
   }
 
   void _changed() async {
-    await state.db.db!.update(
+    await state.db.db.update(
       symTour,
       {
         ...state.data._toRow(),

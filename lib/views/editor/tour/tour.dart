@@ -1,71 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '/db/db.dart' as db;
+import '/db/db.dart';
 import '/db/models/tour.dart';
 import '/widgets/gallery_editor/gallery_editor.dart';
 import 'map.dart';
 import 'waypoints.dart';
 
 class TourEditor extends StatefulWidget {
-  const TourEditor({Key? key}) : super(key: key);
+  const TourEditor({
+    Key? key,
+    required this.path,
+  }) : super(key: key);
+
+  final String path;
 
   @override
-  State<TourEditor> createState() => _TourEditorState();
+  State<TourEditor> createState() => TourEditorState();
 }
 
-class _TourEditorState extends State<TourEditor> {
+class TourEditorState extends State<TourEditor> {
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
 
+  late Future<EvresiDatabase> db;
+
+  @override
+  void initState() {
+    super.initState();
+
+    db = EvresiDatabase.open(widget.path, EvresiDatabaseType.tour);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final contentEditor = _TourContentEditor(
-        key: _contentEditorKey,
-      );
-
-      final map = TourMap(
-        key: _mapKey,
-      );
-
-      if (constraints.maxWidth >= 800) {
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            contentEditor,
-            const VerticalDivider(
-              width: 1.0,
-              thickness: 1.0,
-            ),
-            Expanded(child: map),
-          ],
+    return Provider<Future<EvresiDatabase>>.value(
+      value: db,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final contentEditor = _TourContentEditor(
+          key: _contentEditorKey,
         );
-      } else {
-        return DefaultTabController(
-          length: 2,
-          child: Column(
+
+        final map = TourMap(
+          key: _mapKey,
+        );
+
+        if (constraints.maxWidth >= 800) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TabBar(
-                labelColor: Colors.black,
-                indicatorColor: Theme.of(context).colorScheme.primary,
-                tabs: const [
-                  Tab(child: Text("Content")),
-                  Tab(child: Text("Map")),
-                ],
+              contentEditor,
+              const VerticalDivider(
+                width: 1.0,
+                thickness: 1.0,
               ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    contentEditor,
-                    map,
+              Expanded(child: map),
+            ],
+          );
+        } else {
+          return DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                TabBar(
+                  labelColor: Colors.black,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
+                  tabs: const [
+                    Tab(child: Text("Content")),
+                    Tab(child: Text("Map")),
                   ],
                 ),
-              ),
-            ],
-          ),
-        );
-      }
-    });
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      contentEditor,
+                      map,
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      }),
+    );
   }
 }
 
@@ -83,7 +101,8 @@ class _TourContentEditorState extends State<_TourContentEditor> {
   @override
   void initState() {
     super.initState();
-    db.instance.tour().then((tour) {
+
+    context.read<Future<EvresiDatabase>>().then((db) => db.tour()).then((tour) {
       tour?.listen((() {
         setState(() {});
       }));
@@ -143,7 +162,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
                   decoration: const InputDecoration(labelText: "Description"),
                 ),
                 const SizedBox(height: 16.0),
-                GalleryEditor(itemId: db.Uuid.zero),
+                GalleryEditor(itemId: Uuid.zero),
               ],
             ),
           ),

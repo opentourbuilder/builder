@@ -23,7 +23,7 @@ mixin EvresiDatabaseGalleryMixin on EvresiDatabaseBase {
     return load<DbGallery, GalleryId, Gallery>(
       id: GalleryId(itemId),
       load: () async {
-        var items = await db!.query(
+        var items = await db.query(
           symGallery,
           columns: [symItem, symPath, symOrder],
           where: "$symItem = ?",
@@ -52,10 +52,10 @@ class DbGalleryAccessor {
   int get length => state.data.list.length;
 
   String operator [](int index) => state.data.list[index];
-  operator []=(int index, String value) {
+  operator []=(int index, String value) async {
     state.data.list[index] = value;
 
-    state.db.db!.update(
+    state.db.db.update(
       symGallery,
       {
         symPath: value,
@@ -69,19 +69,19 @@ class DbGalleryAccessor {
     return List.unmodifiable(state.data.list);
   }
 
-  void add(String path) {
+  void add(String path) async {
     var order = state.data.list.length;
 
     state.data.list.add(path);
 
-    state.db.db!.insert(symGallery, {
+    state.db.db.insert(symGallery, {
       symItem: state.id.itemId.bytes,
       symPath: path,
       symOrder: order,
     });
   }
 
-  void reorder(Iterable<String> paths) {
+  void reorder(Iterable<String> paths) async {
     var allPaths = [
       ...paths,
       ...[...state.data.list]..removeWhere((path) => paths.contains(path)),
@@ -89,7 +89,7 @@ class DbGalleryAccessor {
 
     state.data.list = allPaths;
 
-    var batch = state.db.db!.batch();
+    var batch = state.db.db.batch();
 
     int order = 0;
     for (var path in allPaths) {
@@ -106,10 +106,10 @@ class DbGalleryAccessor {
     batch.commit();
   }
 
-  void remove(int index) {
+  void remove(int index) async {
     var path = state.data.list.removeAt(index);
 
-    state.db.db!.delete(
+    state.db.db.delete(
       symGallery,
       where: "$symItem = ? AND $symPath = ?",
       whereArgs: [state.id.itemId.bytes, path],

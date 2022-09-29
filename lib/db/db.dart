@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart' as uuid_lib;
@@ -13,48 +15,48 @@ import 'models/waypoint.dart';
 
 export './db_object.dart';
 
-EvresiDatabase _db = EvresiDatabase();
+class EvresiDatabaseProvider extends StatelessWidget {
+  const EvresiDatabaseProvider({
+    super.key,
+    required this.path,
+    required this.type,
+    required this.child,
+  });
 
-EvresiDatabase get instance => _db;
+  final String path;
+  final EvresiDatabaseType type;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Provider<Future<EvresiDatabase>>(
+      create: (context) {
+        return EvresiDatabase.open(path, type);
+      },
+      dispose: (context, db) {
+        db.then((db) => db.close());
+      },
+      child: child,
+    );
+  }
+}
 
 enum EvresiDatabaseType {
   tour,
   poiSet,
 }
 
-class EvresiDatabase = EvresiDatabaseBase
+class EvresiDatabase extends EvresiDatabaseBase
     with
         EvresiDatabaseWaypointMixin,
         EvresiDatabaseTourMixin,
         EvresiDatabaseGalleryMixin,
-        EvresiDatabasePoiMixin;
+        EvresiDatabasePoiMixin {
+  EvresiDatabase._(super.db, super.type, super.currentRevision) : super._();
 
-class EvresiDatabaseBase {
-  String? dbPath;
-  Database? db;
-  EvresiDatabaseType? type;
-
-  late Uuid currentRevision;
-
-  final Map<dynamic, DbObjectState> dbObjects = {};
-
-  final StreamController<Event> _events = StreamController.broadcast();
-  Stream<Event> get events => _events.stream;
-
-  final Set<void Function()> _openListeners = {};
-
-  void addOpenListener(void Function() onOpen) {
-    _openListeners.add(onOpen);
-  }
-
-  void removeOpenListener(void Function() onOpen) {
-    _openListeners.remove(onOpen);
-  }
-
-  Future<void> open(String path, EvresiDatabaseType type) async {
-    dbPath = path;
-    this.type = type;
-    db = await databaseFactoryFfi.openDatabase(
+  static Future<EvresiDatabase> open(
+      String path, EvresiDatabaseType type) async {
+    var db = await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
         version: 1,
@@ -66,17 +68,53 @@ class EvresiDatabaseBase {
       ),
     );
 
-    await _initCurrentRevision();
+    var uncommittedRevisions = (await db.query(
+      symRevision,
+      columns: [symId],
+      where: "$symCommitted = 0",
+    ))
+        .map((row) => Uuid(row[symId]! as Uint8List))
+        .toList();
 
-    for (var listener in _openListeners) {
-      listener();
+    Uuid currentRevision;
+    if (uncommittedRevisions.isEmpty) {
+      // create new revision if there is no uncommitted one
+      var id = Uuid.v4();
+
+      await db.insert(symRevision, {
+        symId: id.bytes,
+        symTimestamp: DateTime.now().millisecondsSinceEpoch,
+        symUser: "TODO", // TODO
+        symCommitted: 0,
+      });
+
+      currentRevision = id;
+    } else {
+      currentRevision = uncommittedRevisions[0];
     }
+
+    return EvresiDatabase._(db, type, currentRevision);
   }
+}
+
+class EvresiDatabaseBase {
+  final EvresiDatabaseType type;
+  Uuid currentRevision;
+  Database? _db;
+  Database get db => _db!; // _db should only be null if the DB was closed
+
+  @protected
+  final Map<dynamic, DbObjectState> dbObjects = {};
+
+  final StreamController<Event> _events = StreamController.broadcast();
+  Stream<Event> get events => _events.stream;
+
+  EvresiDatabaseBase._(this._db, this.type, this.currentRevision);
 
   Future<void> close() async {
-    dbPath = null;
-    type = null;
-    await db?.close();
+    var temp = db;
+    _db = null;
+    await temp.close();
   }
 
   // Commits the current revision of the database.
@@ -110,32 +148,6 @@ class EvresiDatabaseBase {
       }
     }
   }
-
-  Future<void> _initCurrentRevision() async {
-    var uncommittedRevisions = (await db!.query(
-      symRevision,
-      columns: [symId],
-      where: "$symCommitted = 0",
-    ))
-        .map((row) => Uuid(row[symId]! as Uint8List))
-        .toList();
-
-    if (uncommittedRevisions.isEmpty) {
-      // create new revision if there is no uncommitted one
-      var id = Uuid.v4();
-
-      await db!.insert(symRevision, {
-        symId: id.bytes,
-        symTimestamp: DateTime.now().millisecondsSinceEpoch,
-        symUser: "TODO", // TODO
-        symCommitted: 0,
-      });
-
-      currentRevision = id;
-    } else {
-      currentRevision = uncommittedRevisions[0];
-    }
-  }
 }
 
 class Event<D extends EventDescriptor<T>, T> {
@@ -159,7 +171,7 @@ class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
 
   @override
   Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
-    var rows = await db.db!.query(
+    var rows = await db.db.query(
       symWaypoint,
       columns: [symId, symOrder, symLat, symLng, symName],
       orderBy: symOrder,
@@ -180,7 +192,7 @@ class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
 
   @override
   Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
-    var rows = await db.db!.query(
+    var rows = await db.db.query(
       symPoi,
       columns: [symId, symLat, symLng, symName],
       orderBy: symName,
@@ -194,21 +206,6 @@ class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
 
   @override
   int get hashCode => runtimeType.hashCode + 1;
-}
-
-/// A short summary of a tour.
-class TourSummary {
-  const TourSummary({
-    required this.id,
-    required this.name,
-  });
-
-  TourSummary._fromRow(Map<String, Object?> row)
-      : id = Uuid(row[symId]! as Uint8List),
-        name = row[symName]! as String;
-
-  final Uuid id;
-  final String name;
 }
 
 class PointSummary {

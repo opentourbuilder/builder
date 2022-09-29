@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '/db/db.dart' as db;
+import '/db/db.dart';
 import '/db/models/poi.dart';
 import '/views/editor/pois/map.dart';
 import '/widgets/gallery_editor/gallery_editor.dart';
@@ -12,7 +13,10 @@ import '/widgets/modal.dart';
 class Pois extends StatefulWidget {
   const Pois({
     super.key,
+    required this.path,
   });
+
+  final String path;
 
   @override
   State<Pois> createState() => _PoisState();
@@ -22,17 +26,21 @@ class _PoisState extends State<Pois> {
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
 
-  db.Uuid? selectedPoi;
+  Uuid? selectedPoi;
 
-  StreamSubscription<db.Event>? _eventsSubscription;
+  StreamSubscription<Event>? _eventsSubscription;
 
-  List<db.PointSummary> _pois = [];
+  List<PointSummary> _pois = [];
 
   @override
   void initState() {
     super.initState();
-    _eventsSubscription = db.instance.events.listen(_onEvent);
-    db.instance.requestEvent(const db.PoisEventDescriptor());
+
+    (() async {
+      var db = context.read<Future<EvresiDatabase>>();
+      _eventsSubscription = (await db).events.listen(_onEvent);
+      (await db).requestEvent(const PoisEventDescriptor());
+    })();
   }
 
   @override
@@ -41,8 +49,8 @@ class _PoisState extends State<Pois> {
     super.dispose();
   }
 
-  void _onEvent(db.Event event) {
-    if (event.desc == const db.PoisEventDescriptor()) {
+  void _onEvent(Event event) {
+    if (event.desc == const PoisEventDescriptor()) {
       setState(() {
         _pois = event.value;
       });
@@ -51,70 +59,74 @@ class _PoisState extends State<Pois> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final contentEditor = Container(
-        key: _contentEditorKey,
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: Stack(
-          children: [
-            _PoiList(
-              selectPoi: (id) => setState(() => selectedPoi = id),
-              pois: _pois,
-            ),
-            _PoiEditor(
-              selectedPoi: selectedPoi,
-              selectPoi: (id) => setState(() => selectedPoi = id),
-            ),
-          ],
-        ),
-      );
-
-      final map = PoiMap(
-        key: _mapKey,
-        pois: _pois,
-      );
-
-      Widget child;
-      if (constraints.maxWidth >= 800) {
-        child = Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            contentEditor,
-            const VerticalDivider(
-              width: 1.0,
-              thickness: 1.0,
-            ),
-            Expanded(child: map),
-          ],
-        );
-      } else {
-        child = DefaultTabController(
-          length: 2,
-          child: Column(
+    return EvresiDatabaseProvider(
+      path: widget.path,
+      type: EvresiDatabaseType.poiSet,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final contentEditor = Container(
+          key: _contentEditorKey,
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Stack(
             children: [
-              TabBar(
-                labelColor: Colors.black,
-                indicatorColor: Theme.of(context).colorScheme.primary,
-                tabs: const [
-                  Tab(child: Text("Content")),
-                  Tab(child: Text("Map")),
-                ],
+              _PoiList(
+                selectPoi: (id) => setState(() => selectedPoi = id),
+                pois: _pois,
               ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    contentEditor,
-                    map,
-                  ],
-                ),
+              _PoiEditor(
+                selectedPoi: selectedPoi,
+                selectPoi: (id) => setState(() => selectedPoi = id),
               ),
             ],
           ),
         );
-      }
 
-      return child;
-    });
+        final map = PoiMap(
+          key: _mapKey,
+          pois: _pois,
+        );
+
+        Widget child;
+        if (constraints.maxWidth >= 800) {
+          child = Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              contentEditor,
+              const VerticalDivider(
+                width: 1.0,
+                thickness: 1.0,
+              ),
+              Expanded(child: map),
+            ],
+          );
+        } else {
+          child = DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                TabBar(
+                  labelColor: Colors.black,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
+                  tabs: const [
+                    Tab(child: Text("Content")),
+                    Tab(child: Text("Map")),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      contentEditor,
+                      map,
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return child;
+      }),
+    );
   }
 }
 
@@ -125,8 +137,8 @@ class _PoiList extends StatefulWidget {
     required this.pois,
   }) : super(key: key);
 
-  final void Function(db.Uuid?) selectPoi;
-  final List<db.PointSummary> pois;
+  final void Function(Uuid?) selectPoi;
+  final List<PointSummary> pois;
 
   @override
   State<_PoiList> createState() => _PoiListState();
@@ -135,6 +147,8 @@ class _PoiList extends StatefulWidget {
 class _PoiListState extends State<_PoiList> {
   @override
   Widget build(BuildContext context) {
+    var db = context.watch<Future<EvresiDatabase>>();
+
     return ListView.builder(
       padding: const EdgeInsets.all(12.0),
       itemCount: widget.pois.length + 1,
@@ -151,7 +165,7 @@ class _PoiListState extends State<_PoiList> {
               padding: const EdgeInsets.all(4.0),
               child: ElevatedButton(
                 onPressed: () async {
-                  var poi = await db.instance.createPoi(
+                  var poi = await (await db).createPoi(
                     Poi(
                       name: "Untitled",
                       desc: "",
@@ -184,7 +198,7 @@ class _Poi extends StatefulWidget {
     required this.onTap,
   }) : super(key: key);
 
-  final db.PointSummary summary;
+  final PointSummary summary;
   final void Function() onTap;
 
   @override
@@ -194,6 +208,8 @@ class _Poi extends StatefulWidget {
 class _PoiState extends State<_Poi> {
   @override
   Widget build(BuildContext context) {
+    var db = context.watch<Future<EvresiDatabase>>();
+
     return Card(
       key: ValueKey(widget.summary.id),
       shape: RoundedRectangleBorder(
@@ -218,8 +234,8 @@ class _PoiState extends State<_Poi> {
                 hoverColor: const Color(0x08000088),
                 splashColor: const Color(0x08000088),
                 constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                onPressed: () {
-                  db.instance.deletePoi(widget.summary.id);
+                onPressed: () async {
+                  (await db).deletePoi(widget.summary.id);
                 },
                 child: const Icon(Icons.delete),
               ),
@@ -255,15 +271,15 @@ class _PoiEditor extends StatefulWidget {
     required this.selectPoi,
   });
 
-  final db.Uuid? selectedPoi;
-  final void Function(db.Uuid?) selectPoi;
+  final Uuid? selectedPoi;
+  final void Function(Uuid?) selectPoi;
 
   @override
   State<StatefulWidget> createState() => _PoiEditorState();
 }
 
 class _PoiEditorState extends State<_PoiEditor> {
-  db.Uuid? poiId;
+  Uuid? poiId;
   DbPoi? poi;
 
   TextEditingController titleController = TextEditingController();
@@ -282,13 +298,15 @@ class _PoiEditorState extends State<_PoiEditor> {
 
   @override
   Widget build(BuildContext context) {
+    var db = context.watch<Future<EvresiDatabase>>();
+
     if (widget.selectedPoi != poiId) {
       poiId = widget.selectedPoi;
 
       poi?.dispose();
       poi = null;
       if (poiId != null) {
-        db.instance.poi(poiId!).then((value) {
+        db.then((db) => db.poi(poiId!)).then((value) {
           value?.listen((() => setState(() {})));
           setState(() => poi = value);
           titleController.text = poi?.data?.name ?? "";

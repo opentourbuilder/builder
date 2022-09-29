@@ -81,6 +81,7 @@ class AssetDb {
     var lowercaseAssetName = assetName.toLowerCase();
 
     List<Asset?> matches =
+        // ignore: unnecessary_cast
         (await list(assetName)).map((e) => e as Asset?).toList();
 
     return matches.firstWhere(

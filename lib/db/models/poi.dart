@@ -57,7 +57,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
 
     var poiId = Uuid.v4();
 
-    await db!.insert(symPoi, {
+    await db.insert(symPoi, {
       symId: poiId.bytes,
       symName: data.name,
       symDesc: data.desc,
@@ -85,7 +85,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
     return load<DbPoi, PoiId, Poi>(
       id: PoiId(poiId),
       load: () async {
-        var rows = await db!.query(
+        var rows = await db.query(
           symPoi,
           columns: [symName, symDesc, symLat, symLng],
           where: "$symId = ?",
@@ -104,7 +104,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
 
     dbObjects.remove(PoiId(poiId));
 
-    await db!.delete(
+    await db.delete(
       symPoi,
       where: "$symId = ?",
       whereArgs: [poiId.bytes],
@@ -114,7 +114,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   }
 
   Future<List<PoiWithId>> listPois() async {
-    return (await db!.query(
+    return (await db.query(
       symPoi,
       columns: [symId, symName, symDesc, symLat, symLng],
     ))
@@ -166,7 +166,7 @@ class DbPoiAccessor implements DbPointAccessor {
   }
 
   void _changed() async {
-    await state.db.db!.update(
+    await state.db.db.update(
       symPoi,
       {
         ...state.data._toRow(),

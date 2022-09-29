@@ -1,22 +1,14 @@
+import 'dart:async';
+
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
-import '/db/db.dart' as db;
 import '../../utils/export.dart';
-import '/views/editor/export.dart';
 import '/views/editor/pois/pois.dart';
 import 'home.dart';
 import 'tour/tour.dart';
-
-enum _CurrentPage {
-  home,
-  tour,
-  poiSet,
-  exporting,
-  finishedExport,
-}
 
 class EditorPage extends StatefulWidget {
   const EditorPage({Key? key}) : super(key: key);
@@ -28,65 +20,136 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   final GlobalKey<NavigatorState> navKey = GlobalKey();
 
-  _CurrentPage _currentPage = _CurrentPage.home;
-
-  @override
-  void initState() {
-    super.initState();
-
-    db.instance.addOpenListener(_onDbOpen);
-  }
-
-  @override
-  void dispose() {
-    db.instance.removeOpenListener(_onDbOpen);
-
-    super.dispose();
-  }
-
-  void _onDbOpen() {
-    setState(() {
-      if (db.instance.type == null) {
-        _currentPage = _CurrentPage.home;
-      } else if (db.instance.type == db.EvresiDatabaseType.tour) {
-        _currentPage = _CurrentPage.tour;
-      } else if (db.instance.type == db.EvresiDatabaseType.poiSet) {
-        _currentPage = _CurrentPage.poiSet;
-      }
-    });
-  }
+  Widget _currentPage = const Home();
+  GlobalKey _currentPageKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
-    Widget child = const SizedBox();
-    if (_currentPage == _CurrentPage.home) {
-      child = const Home();
-    } else if (_currentPage == _CurrentPage.tour) {
-      child = const TourEditor();
-    } else if (_currentPage == _CurrentPage.poiSet) {
-      child = const Pois();
-    } else if (_currentPage == _CurrentPage.exporting) {
-      child = const ExportPage(finished: false);
-    } else if (_currentPage == _CurrentPage.finishedExport) {
-      child = const ExportPage(finished: true);
-    }
-
     return Scaffold(
       body: Column(
         children: [
           TopBar(
-            onExportStart: () {
-              setState(() => _currentPage = _CurrentPage.exporting);
+            onNewTourPressed: () async {
+              var chosenPath = await FilePicker.platform.saveFile(
+                dialogTitle: 'New Evresi Tour File',
+                fileName: 'Untitled.evtour',
+                type: FileType.custom,
+                allowedExtensions: ["evtour"],
+              );
+
+              if (chosenPath != null) {
+                setState(() => _currentPage = TourEditor(
+                    key: _currentPageKey = GlobalKey(), path: chosenPath));
+              }
             },
-            onExportFinish: () {
-              setState(() => _currentPage = _CurrentPage.finishedExport);
+            onNewPoiSetPressed: () async {
+              var chosenPath = await FilePicker.platform.saveFile(
+                dialogTitle: 'New Evresi POI Set File',
+                fileName: 'Untitled.evpoi',
+                type: FileType.custom,
+                allowedExtensions: ["evpoi"],
+              );
+
+              if (chosenPath != null) {
+                setState(() => _currentPage =
+                    Pois(key: _currentPageKey = GlobalKey(), path: chosenPath));
+              }
+            },
+            onOpenPressed: () async {
+              var chosenPath = (await FilePicker.platform.pickFiles(
+                dialogTitle: 'Open Evresi File',
+                type: FileType.custom,
+                allowedExtensions: ["evtour", "evpoi"],
+              ))
+                  ?.files
+                  .single
+                  .path;
+
+              if (chosenPath != null) {
+                var ext = path.extension(chosenPath);
+
+                if (ext == ".evtour") {
+                  setState(() => _currentPage = TourEditor(
+                      key: _currentPageKey = GlobalKey(), path: chosenPath));
+                } else if (ext == ".evpoi") {
+                  setState(() => _currentPage = Pois(
+                      key: _currentPageKey = GlobalKey(), path: chosenPath));
+                } else {
+                  return;
+                }
+              }
+            },
+            showExportTour: _currentPage is TourEditor,
+            onExportTourPressed: () async {
+              var sourcePoiSets = (await FilePicker.platform.pickFiles(
+                dialogTitle: 'Choose POI Sets for Tour Export',
+                type: FileType.custom,
+                allowedExtensions: ["evpoi"],
+                allowMultiple: true,
+              ))
+                  ?.files
+                  .map((e) => e.path!)
+                  .toList();
+
+              if (!mounted) return;
+
+              Navigator.of(context).push(DialogRoute(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) {
+                  return const Center(
+                    child: SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  );
+                },
+              ));
+
+              export(
+                db: (_currentPageKey.currentState as TourEditorState).db,
+                sourcePoiSets: sourcePoiSets ?? [],
+                promptForDestFile: () async {
+                  var saveExport =
+                      await Navigator.of(context).pushReplacement(DialogRoute(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Export finished.'),
+                        actions: <Widget>[
+                          TextButton(
+                            child: const Text('Don\'t save'),
+                            onPressed: () {
+                              Navigator.of(context).pop(false);
+                            },
+                          ),
+                          TextButton(
+                            child: const Text('Save'),
+                            onPressed: () {
+                              Navigator.of(context).pop(true);
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ));
+
+                  if (!saveExport) return null;
+
+                  return await FilePicker.platform.saveFile(
+                    dialogTitle: 'Save Export',
+                    fileName: 'tour_export.zip',
+                  );
+                },
+              );
             },
           ),
           Expanded(
             child: Row(
               children: [
                 Expanded(
-                  child: child,
+                  child: _currentPage,
                 ),
               ],
             ),
@@ -97,15 +160,28 @@ class _EditorPageState extends State<EditorPage> {
   }
 }
 
-class TopBar extends StatelessWidget {
+class TopBar extends StatefulWidget {
   const TopBar({
     super.key,
-    required this.onExportStart,
-    required this.onExportFinish,
+    required this.onNewTourPressed,
+    required this.onNewPoiSetPressed,
+    required this.onOpenPressed,
+    required this.showExportTour,
+    required this.onExportTourPressed,
   });
 
-  final void Function() onExportStart;
-  final void Function() onExportFinish;
+  final void Function() onNewTourPressed;
+  final void Function() onNewPoiSetPressed;
+  final void Function() onOpenPressed;
+  final bool showExportTour;
+  final void Function() onExportTourPressed;
+
+  @override
+  State<TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends State<TopBar> {
+  GlobalKey currentPageKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -128,101 +204,27 @@ class TopBar extends StatelessWidget {
               context,
               icon: Icons.note_add_outlined,
               text: "New Tour...",
-              onPressed: () async {
-                var chosenPath = await FilePicker.platform.saveFile(
-                  dialogTitle: 'New Evresi Tour File',
-                  fileName: 'Untitled.evtour',
-                  type: FileType.custom,
-                  allowedExtensions: ["evtour"],
-                );
-
-                if (chosenPath != null) {
-                  await db.instance.close();
-
-                  await db.instance
-                      .open(chosenPath, db.EvresiDatabaseType.tour);
-                }
-              },
+              onPressed: widget.onNewTourPressed,
             ),
             _button(
               context,
               icon: Icons.note_add_outlined,
               text: "New POI Set...",
-              onPressed: () async {
-                var chosenPath = await FilePicker.platform.saveFile(
-                  dialogTitle: 'New Evresi POI Set File',
-                  fileName: 'Untitled.evpoi',
-                  type: FileType.custom,
-                  allowedExtensions: ["evpoi"],
-                );
-
-                if (chosenPath != null) {
-                  await db.instance.close();
-
-                  await db.instance
-                      .open(chosenPath, db.EvresiDatabaseType.poiSet);
-                }
-              },
+              onPressed: widget.onNewPoiSetPressed,
             ),
             _button(
               context,
               icon: Icons.file_open_outlined,
               text: "Open...",
-              onPressed: () async {
-                var chosenPath = (await FilePicker.platform.pickFiles(
-                  dialogTitle: 'Open Evresi File',
-                  type: FileType.custom,
-                  allowedExtensions: ["evtour", "evpoi"],
-                ))
-                    ?.files
-                    .single
-                    .path;
-
-                if (chosenPath != null) {
-                  await db.instance.close();
-
-                  var ext = path.extension(chosenPath);
-
-                  if (ext == ".evtour") {
-                    await db.instance
-                        .open(chosenPath, db.EvresiDatabaseType.tour);
-                  } else if (ext == ".evpoi") {
-                    await db.instance
-                        .open(chosenPath, db.EvresiDatabaseType.poiSet);
-                  } else {
-                    return;
-                  }
-                }
-              },
+              onPressed: widget.onOpenPressed,
             ),
-            _button(
-              context,
-              icon: Icons.upload_file_outlined,
-              text: "Export...",
-              onPressed: () {
-                onExportStart();
-                export(
-                  onFinish: onExportFinish,
-                  promptForSourceFiles: () async {
-                    return (await FilePicker.platform.pickFiles(
-                      dialogTitle: 'Choose Evresi Files to Export',
-                      type: FileType.custom,
-                      allowedExtensions: ["evtour", "evpoi"],
-                      allowMultiple: true,
-                    ))
-                        ?.files
-                        .map((e) => e.path!)
-                        .toList();
-                  },
-                  promptForDestFile: () async {
-                    return await FilePicker.platform.saveFile(
-                      dialogTitle: 'Save Export',
-                      fileName: 'export.json',
-                    );
-                  },
-                );
-              },
-            ),
+            if (widget.showExportTour)
+              _button(
+                context,
+                icon: Icons.upload_file_outlined,
+                text: "Export Tour...",
+                onPressed: widget.onExportTourPressed,
+              ),
             Expanded(child: MoveWindow()),
             MinimizeWindowButton(colors: buttonColors),
             MaximizeWindowButton(colors: buttonColors),

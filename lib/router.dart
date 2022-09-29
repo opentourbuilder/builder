@@ -48,17 +48,14 @@ class _ErrorResponse {
 
 class ValhallaRouter implements Router {
   late final StreamQueue<dynamic> events;
-  late final SendPort messages;
-  late final Isolate worker;
+  late final Future<SendPort> messages;
+  late final Future<Isolate> worker;
 
   ValhallaRouter() {
     final workerRecvPort = ReceivePort();
     events = StreamQueue(workerRecvPort);
-    events.next.then((sendPort) {
-      messages = sendPort;
-    });
-    Isolate.spawn(_isolate, workerRecvPort.sendPort)
-        .then((spawned) => worker = spawned);
+    messages = (() async => await events.next as SendPort)();
+    worker = Isolate.spawn(_isolate, workerRecvPort.sendPort);
   }
 
   void dispose() {
@@ -83,7 +80,7 @@ class ValhallaRouter implements Router {
 
     final requestText = jsonEncode(requestJson);
 
-    messages.send(_RouteMessage(request: requestText));
+    (await messages).send(_RouteMessage(request: requestText));
 
     final response = await events.next;
 

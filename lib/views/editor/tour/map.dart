@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:latlong2/latlong.dart';
 
-import '/db/db.dart' as db;
+import '/db/db.dart';
 import '/router.dart';
 import '/widgets/map_icon.dart';
 
@@ -20,9 +21,9 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   ValhallaRouter router = ValhallaRouter();
   List<LatLng>? route;
 
-  StreamSubscription<db.Event>? _eventsSubscription;
+  StreamSubscription<Event>? _eventsSubscription;
 
-  List<db.PointSummary> _waypoints = [];
+  List<PointSummary> _waypoints = [];
 
   @override
   bool get wantKeepAlive => true;
@@ -31,8 +32,14 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
 
-    _eventsSubscription = db.instance.events.listen(_onEvent);
-    db.instance.requestEvent(const db.WaypointsEventDescriptor());
+    var db = context.read<Future<EvresiDatabase>>();
+
+    (() async {
+      if (_eventsSubscription == null) {
+        _eventsSubscription = (await db).events.listen(_onEvent);
+        (await db).requestEvent(const WaypointsEventDescriptor());
+      }
+    })();
   }
 
   @override
@@ -41,8 +48,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
     super.dispose();
   }
 
-  void _onEvent(db.Event event) {
-    if (event.desc == const db.WaypointsEventDescriptor()) {
+  void _onEvent(Event event) {
+    if (event.desc == const WaypointsEventDescriptor()) {
       setState(() {
         _waypoints = event.value;
       });
@@ -56,6 +63,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    var db = context.watch<Future<EvresiDatabase>>();
 
     return FlutterMap(
       options: MapOptions(
@@ -94,8 +103,8 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                 width: 40,
                 height: 40,
                 preservePosition: false,
-                onDragEnd: (details, point) {
-                  db.instance.waypoint(waypoint.value.id).then(
+                onDragEnd: (details, point) async {
+                  (await db).waypoint(waypoint.value.id).then(
                     (loadedWaypoint) {
                       loadedWaypoint?.data?.lat = point.latitude;
                       loadedWaypoint?.data?.lng = point.longitude;

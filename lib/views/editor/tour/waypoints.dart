@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '/asset_db/asset_db.dart';
-import '/db/db.dart' as db;
+import '/db/db.dart';
 import '/db/models/waypoint.dart';
 import '/widgets/asset_picker.dart';
 import '/widgets/gallery_editor/gallery_editor.dart';
@@ -18,7 +19,7 @@ class Waypoints extends StatefulWidget {
 }
 
 class _WaypointsState extends State<Waypoints> {
-  db.Uuid? selectedWaypoint;
+  Uuid? selectedWaypoint;
 
   @override
   Widget build(BuildContext context) {
@@ -42,22 +43,29 @@ class _WaypointList extends StatefulWidget {
     required this.selectWaypoint,
   });
 
-  final void Function(db.Uuid?) selectWaypoint;
+  final void Function(Uuid?) selectWaypoint;
 
   @override
   State<_WaypointList> createState() => _WaypointListState();
 }
 
 class _WaypointListState extends State<_WaypointList> {
-  StreamSubscription<db.Event>? _eventsSubscription;
+  StreamSubscription<Event>? _eventsSubscription;
 
-  List<db.PointSummary> _waypoints = [];
+  List<PointSummary> _waypoints = [];
 
   @override
   void initState() {
     super.initState();
-    _eventsSubscription = db.instance.events.listen(_onEvent);
-    db.instance.requestEvent(const db.WaypointsEventDescriptor());
+
+    var db = context.read<Future<EvresiDatabase>>();
+
+    (() async {
+      if (_eventsSubscription == null) {
+        _eventsSubscription = (await db).events.listen(_onEvent);
+        (await db).requestEvent(const WaypointsEventDescriptor());
+      }
+    })();
   }
 
   @override
@@ -66,8 +74,8 @@ class _WaypointListState extends State<_WaypointList> {
     super.dispose();
   }
 
-  void _onEvent(db.Event event) {
-    if (event.desc == const db.WaypointsEventDescriptor()) {
+  void _onEvent(Event event) {
+    if (event.desc == const WaypointsEventDescriptor()) {
       setState(() {
         _waypoints = event.value;
       });
@@ -76,6 +84,8 @@ class _WaypointListState extends State<_WaypointList> {
 
   @override
   Widget build(BuildContext context) {
+    var db = context.watch<Future<EvresiDatabase>>();
+
     return ListView.builder(
       padding: const EdgeInsets.all(12.0),
       itemCount: _waypoints.length + 1,
@@ -92,8 +102,8 @@ class _WaypointListState extends State<_WaypointList> {
             child: Padding(
               padding: const EdgeInsets.all(4.0),
               child: ElevatedButton(
-                onPressed: () {
-                  db.instance.createWaypoint(
+                onPressed: () async {
+                  (await db).createWaypoint(
                     Waypoint(
                       name: "Untitled",
                       desc: "",
@@ -128,7 +138,7 @@ class _Waypoint extends StatefulWidget {
   }) : super(key: key);
 
   final int index;
-  final db.PointSummary summary;
+  final PointSummary summary;
   final void Function() onTap;
 
   @override
@@ -138,6 +148,8 @@ class _Waypoint extends StatefulWidget {
 class _WaypointState extends State<_Waypoint> {
   @override
   Widget build(BuildContext context) {
+    var db = context.watch<Future<EvresiDatabase>>();
+
     return Card(
       key: ValueKey(widget.summary.id),
       shape: RoundedRectangleBorder(
@@ -170,8 +182,8 @@ class _WaypointState extends State<_Waypoint> {
                 hoverColor: const Color(0x08000088),
                 splashColor: const Color(0x08000088),
                 constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                onPressed: () {
-                  db.instance.deleteWaypoint(widget.summary.id);
+                onPressed: () async {
+                  (await db).deleteWaypoint(widget.summary.id);
                 },
                 child: const Icon(Icons.delete),
               ),
@@ -207,8 +219,8 @@ class _WaypointEditor extends StatefulWidget {
     required this.selectWaypoint,
   });
 
-  final db.Uuid? selectedWaypoint;
-  final void Function(db.Uuid?) selectWaypoint;
+  final Uuid? selectedWaypoint;
+  final void Function(Uuid?) selectWaypoint;
 
   @override
   State<StatefulWidget> createState() => _WaypointEditorState();
@@ -229,7 +241,10 @@ class _WaypointEditorState extends State<_WaypointEditor> {
 
     if (widget.selectedWaypoint != oldWidget.selectedWaypoint) {
       if (widget.selectedWaypoint != null) {
-        db.instance.waypoint(widget.selectedWaypoint!).then((value) {
+        context
+            .read<Future<EvresiDatabase>>()
+            .then((db) => db.waypoint(widget.selectedWaypoint!))
+            .then((value) {
           waypoint?.dispose();
           value?.listen((() => setState(() {})));
           setState(() => waypoint = value);

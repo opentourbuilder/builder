@@ -5,129 +5,158 @@ import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mtk;
-import 'package:path/path.dart' as path;
 
 import '/asset_db/asset_db.dart';
 import '/router.dart';
 import '../db/db.dart';
 
 Future<void> export({
-  required void Function() onFinish,
-  required Future<List<String>?> Function() promptForSourceFiles,
+  required Future<EvresiDatabase> db,
+  required List<String> sourcePoiSets,
   required Future<String?> Function() promptForDestFile,
 }) async {
-  var sourceFiles = await promptForSourceFiles();
-  if (sourceFiles == null) return;
+  var tourDb = await db;
 
-  var jsonString = await exportToJson(sourceFiles);
+  var usedAssets = <String>[];
 
-  onFinish();
-  var destFile = await promptForDestFile();
-  if (destFile == null) return;
+  var tour = await _tourToJsonObject(tourDb);
 
-  await File(destFile).writeAsString(jsonString);
-}
+  usedAssets.addAll(await _tourUsedAssets(tourDb));
 
-Future<String> exportToJson(List<String> paths) async {
-  var db = EvresiDatabase();
-  var router = ValhallaRouter();
+  var pois = [];
+  for (var poiSetPath in sourcePoiSets) {
+    var poiDb =
+        await EvresiDatabase.open(poiSetPath, EvresiDatabaseType.poiSet);
 
-  var json = {
-    "tours": [],
-    "pois": [],
-  };
+    pois.addAll(await _poiSetToJsonObject(poiDb));
 
-  for (var dbPath in paths) {
-    var ext = path.extension(dbPath);
-    late EvresiDatabaseType type;
-    if (ext == ".evtour") {
-      type = EvresiDatabaseType.tour;
-    } else if (ext == ".evpoi") {
-      type = EvresiDatabaseType.poiSet;
-    } else {
-      continue;
-    }
+    usedAssets.addAll(await _poiSetUsedAssets(poiDb));
 
-    await db.open(dbPath, type);
-
-    if (db.type == EvresiDatabaseType.tour) {
-      var tour = await db.tour();
-
-      tour!;
-
-      var tourObj = <String, dynamic>{
-        "name": tour.data!.name,
-        "desc": tour.data!.desc,
-        "waypoints": [],
-      };
-
-      var tourGallery = await db.gallery(Uuid.zero);
-      tourObj["gallery"] = tourGallery!.data!.list();
-      tourGallery.dispose();
-
-      var waypoints = await db.listWaypoints();
-
-      for (var waypointWithId in waypoints) {
-        var id = waypointWithId.id;
-        var waypoint = waypointWithId.waypoint;
-
-        var waypointObj = {
-          "name": waypoint.name,
-          "desc": waypoint.desc,
-          "lat": waypoint.lat,
-          "lng": waypoint.lng,
-          "narration": waypoint.narrationPath,
-        };
-
-        var waypointGallery = await db.gallery(id);
-        waypointObj["gallery"] = waypointGallery!.data!.list();
-        waypointGallery.dispose();
-
-        tourObj["waypoints"]!.add(waypointObj);
-      }
-
-      var path = await router
-          .route(waypoints.map((w) => LatLng(w.waypoint.lat, w.waypoint.lng)));
-
-      var pathString = mtk.PolygonUtil.encode(path
-          .map((ll) => mtk.LatLng(ll.latitude, ll.longitude))
-          .toList(growable: false));
-
-      tourObj["path"] = pathString;
-
-      json["tours"]!.add(tourObj);
-
-      tour.dispose();
-    } else if (db.type == EvresiDatabaseType.poiSet) {
-      for (var poiWithId in await db.listPois()) {
-        var id = poiWithId.id;
-        var poi = poiWithId.poi;
-
-        var poiObj = {
-          "name": poi.name,
-          "desc": poi.desc,
-          "lat": poi.lat,
-          "lng": poi.lng,
-        };
-
-        var poiGallery = await db.gallery(id);
-        poiObj["gallery"] = poiGallery!.data!.list();
-        poiGallery.dispose();
-
-        json["pois"]!.add(poiObj);
-      }
-    }
-
-    await db.close();
+    await poiDb.close();
   }
 
-  router.dispose();
+  var json = jsonEncode({
+    "tour": tour,
+    "pois": pois,
+  });
 
-  return jsonEncode(json);
+  var destFile = await promptForDestFile();
+
+  if (destFile != null) {
+    await bundle(destFile, usedAssets, json);
+  }
 }
 
-Future<void> bundle(String outputPath, List<String> assetNames) async {
-  await compute<_Message, void>(_runBundle, _Message(outputPath, assetNames));
+Future<List<String>> _poiSetUsedAssets(EvresiDatabase poiDb) async {
+  var usedAssets = <String>[];
+
+  for (var poiWithId in await poiDb.listPois()) {
+    var id = poiWithId.id;
+
+    var gallery = await poiDb.gallery(id);
+    usedAssets.addAll(gallery!.data!.list());
+    gallery.dispose();
+  }
+
+  return usedAssets;
+}
+
+Future<dynamic> _poiSetToJsonObject(EvresiDatabase poiDb) async {
+  var json = [];
+
+  for (var poiWithId in await poiDb.listPois()) {
+    var id = poiWithId.id;
+    var poi = poiWithId.poi;
+
+    var poiObj = {
+      "name": poi.name,
+      "desc": poi.desc,
+      "lat": poi.lat,
+      "lng": poi.lng,
+    };
+
+    var poiGallery = await poiDb.gallery(id);
+    poiObj["gallery"] = poiGallery!.data!.list();
+    poiGallery.dispose();
+
+    json.add(poiObj);
+  }
+
+  return json;
+}
+
+Future<List<String>> _tourUsedAssets(EvresiDatabase tourDb) async {
+  var usedAssets = <String>[];
+
+  var tourGallery = await tourDb.gallery(Uuid.zero);
+  usedAssets.addAll(tourGallery!.data!.list());
+  tourGallery.dispose();
+
+  for (var waypointWithId in await tourDb.listWaypoints()) {
+    var id = waypointWithId.id;
+
+    var waypointGallery = await tourDb.gallery(id);
+    usedAssets.addAll(waypointGallery!.data!.list());
+    waypointGallery.dispose();
+  }
+
+  return usedAssets;
+}
+
+Future<dynamic> _tourToJsonObject(EvresiDatabase tourDb) async {
+  var router = ValhallaRouter();
+
+  var tour = (await tourDb.tour())!;
+
+  var json = <String, dynamic>{
+    "name": tour.data!.name,
+    "desc": tour.data!.desc,
+    "waypoints": [],
+  };
+
+  var tourGallery = await tourDb.gallery(Uuid.zero);
+  json["gallery"] = tourGallery!.data!.list();
+  tourGallery.dispose();
+
+  var waypoints = await tourDb.listWaypoints();
+
+  for (var waypointWithId in waypoints) {
+    var id = waypointWithId.id;
+    var waypoint = waypointWithId.waypoint;
+
+    var waypointObj = {
+      "name": waypoint.name,
+      "desc": waypoint.desc,
+      "lat": waypoint.lat,
+      "lng": waypoint.lng,
+      "narration": waypoint.narrationPath,
+    };
+
+    var waypointGallery = await tourDb.gallery(id);
+    waypointObj["gallery"] = waypointGallery!.data!.list();
+    waypointGallery.dispose();
+
+    json["waypoints"]!.add(waypointObj);
+  }
+
+  var tourPath = await router
+      .route(waypoints.map((w) => LatLng(w.waypoint.lat, w.waypoint.lng)));
+
+  var pathString = mtk.PolygonUtil.encode(tourPath
+      .map((ll) => mtk.LatLng(ll.latitude, ll.longitude))
+      .toList(growable: false));
+
+  json["path"] = pathString;
+
+  tour.dispose();
+
+  return json;
+}
+
+Future<void> bundle(
+    String outputPath, List<String> assetNames, String tourJson) async {
+  await compute<_Message, void>(
+      _runBundle, _Message(outputPath, assetNames, tourJson, assetDbInstance));
 }
 
 Future<void> _runBundle(_Message message) async {
@@ -135,18 +164,25 @@ Future<void> _runBundle(_Message message) async {
 
   zipEncoder.open(message.outputPath);
 
-  var assets = await assetDbInstance.list();
-  assets.removeWhere((element) => !message.assetNames.contains(element.name));
-  for (var asset in assets) {
-    zipEncoder.addFile(File(asset.fullPath), asset.name);
-  }
+  try {
+    var assets = await message.assetDb.list();
+    assets.removeWhere((element) => !message.assetNames.contains(element.name));
+    for (var asset in assets) {
+      zipEncoder.addFile(File(asset.fullPath), "assets/${asset.name}");
+    }
 
-  zipEncoder.close();
+    zipEncoder
+        .addArchiveFile(ArchiveFile.string("tour.json", message.tourJson));
+  } finally {
+    zipEncoder.close();
+  }
 }
 
 class _Message {
-  const _Message(this.outputPath, this.assetNames);
+  const _Message(this.outputPath, this.assetNames, this.tourJson, this.assetDb);
 
   final String outputPath;
   final List<String> assetNames;
+  final String tourJson;
+  final AssetDb assetDb;
 }

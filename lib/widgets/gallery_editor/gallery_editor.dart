@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 import '/asset_db/asset_db.dart';
@@ -28,8 +29,9 @@ class _GalleryEditorState extends State<GalleryEditor> {
   void initState() {
     super.initState();
 
-    db.instance
-        .gallery(widget.itemId)
+    context
+        .read<Future<db.EvresiDatabase>>()
+        .then((db) => db.gallery(widget.itemId))
         .then((value) => setState(() => gallery = value));
   }
 
@@ -37,8 +39,9 @@ class _GalleryEditorState extends State<GalleryEditor> {
   void didUpdateWidget(covariant GalleryEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    db.instance
-        .gallery(widget.itemId)
+    context
+        .read<Future<db.EvresiDatabase>>()
+        .then((db) => db.gallery(widget.itemId))
         .then((value) => setState(() => gallery = value));
   }
 
