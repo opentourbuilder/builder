@@ -15,32 +15,6 @@ import 'models/waypoint.dart';
 
 export './db_object.dart';
 
-class EvresiDatabaseProvider extends StatelessWidget {
-  const EvresiDatabaseProvider({
-    super.key,
-    required this.path,
-    required this.type,
-    required this.child,
-  });
-
-  final String path;
-  final EvresiDatabaseType type;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Provider<Future<EvresiDatabase>>(
-      create: (context) {
-        return EvresiDatabase.open(path, type);
-      },
-      dispose: (context, db) {
-        db.then((db) => db.close());
-      },
-      child: child,
-    );
-  }
-}
-
 enum EvresiDatabaseType {
   tour,
   poiSet,

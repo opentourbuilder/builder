@@ -26,6 +26,8 @@ class _PoisState extends State<Pois> {
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
 
+  late Future<EvresiDatabase> db;
+
   Uuid? selectedPoi;
 
   StreamSubscription<Event>? _eventsSubscription;
@@ -36,16 +38,18 @@ class _PoisState extends State<Pois> {
   void initState() {
     super.initState();
 
-    (() async {
-      var db = context.read<Future<EvresiDatabase>>();
-      _eventsSubscription = (await db).events.listen(_onEvent);
-      (await db).requestEvent(const PoisEventDescriptor());
-    })();
+    db = EvresiDatabase.open(widget.path, EvresiDatabaseType.poiSet);
+
+    db.then((db) {
+      _eventsSubscription = db.events.listen(_onEvent);
+      db.requestEvent(const PoisEventDescriptor());
+    });
   }
 
   @override
   void dispose() {
     _eventsSubscription?.cancel();
+    db.then((db) => db.close());
     super.dispose();
   }
 
@@ -59,9 +63,8 @@ class _PoisState extends State<Pois> {
 
   @override
   Widget build(BuildContext context) {
-    return EvresiDatabaseProvider(
-      path: widget.path,
-      type: EvresiDatabaseType.poiSet,
+    return Provider.value(
+      value: db,
       child: LayoutBuilder(builder: (context, constraints) {
         final contentEditor = Container(
           key: _contentEditorKey,

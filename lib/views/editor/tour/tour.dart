@@ -33,6 +33,13 @@ class TourEditorState extends State<TourEditor> {
   }
 
   @override
+  void dispose() {
+    db.then((db) => db.close());
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Provider<Future<EvresiDatabase>>.value(
       value: db,
