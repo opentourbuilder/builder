@@ -1,4 +1,7 @@
-# builder
+# Evresi Tour Builder
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/evresi/builder/Windows?label=Windows&style=for-the-badge)](https://github.com/evresi/builder/actions/workflows/windows.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/evresi/builder/MacOS?label=MacOS&style=for-the-badge)](https://github.com/evresi/builder/actions/workflows/macos.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/evresi/builder/Linux?label=Linux&style=for-the-badge)](https://github.com/evresi/builder/actions/workflows/linux.yml)
 
 The Evresi tour builder.
 
