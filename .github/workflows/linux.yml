@@ -6,12 +6,16 @@ on:
     paths-ignore:
       - windows/
       - macos/
+      - .github/workflows/windows.yml
+      - .github/workflows/macos.yml
       - README.md
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - windows/
       - macos/
+      - .github/workflows/windows.yml
+      - .github/workflows/macos.yml
       - README.md
 
   workflow_dispatch:
