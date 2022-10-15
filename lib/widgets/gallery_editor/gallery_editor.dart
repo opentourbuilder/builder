@@ -94,7 +94,9 @@ class _GalleryEditorState extends State<GalleryEditor> {
                                 .push(GalleryImageModalRoute(null));
 
                         if (result is GalleryImageModalResultUpdated) {
-                          setState(() => gallery!.data!.add(result.asset.name));
+                          setState(() {
+                            gallery!.data!.add(result.asset.name);
+                          });
                         }
                       },
                       iconSize: 28.0,

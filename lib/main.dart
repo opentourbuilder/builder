@@ -7,6 +7,7 @@ import 'theme.dart';
 import 'views/editor/editor.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await initAssetDatabase();
   sqfliteFfiInit();
   runApp(const MyApp());

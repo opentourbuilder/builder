@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:file_picker/file_picker.dart';
@@ -200,6 +201,7 @@ class _TopBarState extends State<TopBar> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (Platform.isMacOS) Expanded(child: MoveWindow()),
             _button(
               context,
               icon: Icons.note_add_outlined,
@@ -225,10 +227,10 @@ class _TopBarState extends State<TopBar> {
                 text: "Export Tour...",
                 onPressed: widget.onExportTourPressed,
               ),
-            Expanded(child: MoveWindow()),
-            MinimizeWindowButton(colors: buttonColors),
-            MaximizeWindowButton(colors: buttonColors),
-            CloseWindowButton(colors: buttonColors),
+            if (!Platform.isMacOS) Expanded(child: MoveWindow()),
+            if (!Platform.isMacOS) MinimizeWindowButton(colors: buttonColors),
+            if (!Platform.isMacOS) MaximizeWindowButton(colors: buttonColors),
+            if (!Platform.isMacOS) CloseWindowButton(colors: buttonColors),
           ],
         ),
       ),
