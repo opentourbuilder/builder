@@ -1,5 +1,6 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'asset_db/asset_db.dart';
 import 'theme.dart';
@@ -7,6 +8,7 @@ import 'views/editor/editor.dart';
 
 Future<void> main() async {
   await initAssetDatabase();
+  sqfliteFfiInit();
   runApp(const MyApp());
 
   doWhenWindowReady(() {
