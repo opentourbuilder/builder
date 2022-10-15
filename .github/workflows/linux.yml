@@ -1,0 +1,33 @@
+name: Linux
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - windows/
+      - macos/
+      - README.md
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - windows/
+      - macos/
+      - README.md
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        architecture: x64
+    - run: flutter pub get
+    - run: flutter build linux
+    - uses: actions/upload-artifact@v3
+      with:
+        name: bundle
+        path: ${{github.workspace}}/build/linux/x64/release/bundle/
