@@ -130,7 +130,7 @@ Future<dynamic> _tourToJsonObject(EvresiDatabase tourDb) async {
       "lat": waypoint.lat,
       "lng": waypoint.lng,
       "narration": waypoint.narrationPath,
-      "triggerRadius": waypoint.triggerRadius,
+      "trigger_radius": waypoint.triggerRadius,
     };
 
     var waypointGallery = await tourDb.gallery(id);
