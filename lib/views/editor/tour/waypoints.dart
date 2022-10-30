@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:builder/widgets/number_field.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -109,6 +110,7 @@ class _WaypointListState extends State<_WaypointList> {
                       desc: "",
                       lat: 0,
                       lng: 0,
+                      triggerRadius: 30,
                       narrationPath: null,
                     ),
                   );
@@ -294,6 +296,14 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                     const SizedBox(height: 16.0),
                     LocationField(
                       point: waypoint,
+                    ),
+                    const SizedBox(height: 16.0),
+                    NumberField(
+                      labelText: "Trigger Radius",
+                      value: waypoint?.data?.triggerRadius ?? 0,
+                      requestValueChange: (newValue) {
+                        waypoint!.data!.triggerRadius = newValue;
+                      },
                     ),
                     const SizedBox(height: 16.0),
                     AssetPicker(

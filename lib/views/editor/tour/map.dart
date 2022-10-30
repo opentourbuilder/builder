@@ -95,6 +95,18 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
               ),
           ],
         ),
+        CircleLayer(
+          circles: [
+            for (var waypoint in _waypoints.asMap().entries)
+              if (waypoint.value.triggerRadius != null)
+                CircleMarker(
+                  point: LatLng(waypoint.value.lat, waypoint.value.lng),
+                  radius: waypoint.value.triggerRadius!,
+                  color: const Color.fromARGB(97, 255, 76, 44),
+                  useRadiusInMeter: true,
+                ),
+          ],
+        ),
         DragMarkers(
           markers: [
             for (var waypoint in _waypoints.asMap().entries)
@@ -106,9 +118,10 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
                 onDragEnd: (details, point) async {
                   (await db).waypoint(waypoint.value.id).then(
                     (loadedWaypoint) {
-                      loadedWaypoint?.data?.lat = point.latitude;
-                      loadedWaypoint?.data?.lng = point.longitude;
-                      loadedWaypoint?.dispose();
+                      if (loadedWaypoint == null) return;
+                      loadedWaypoint.data?.lat = point.latitude;
+                      loadedWaypoint.data?.lng = point.longitude;
+                      loadedWaypoint.dispose();
                     },
                   );
                 },

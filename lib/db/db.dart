@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart' as uuid_lib;
@@ -33,12 +31,13 @@ class EvresiDatabase extends EvresiDatabaseBase
     var db = await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
         onCreate: (db, version) async {
           await db.execute(type == EvresiDatabaseType.tour
               ? _tourSqlOnCreate
               : _poiSetSqlOnCreate);
         },
+        onUpgrade: _onUpgrade,
       ),
     );
 
@@ -68,6 +67,21 @@ class EvresiDatabase extends EvresiDatabaseBase
     }
 
     return EvresiDatabase._(db, type, currentRevision);
+  }
+
+  static FutureOr<void> _onUpgrade(
+      Database db, int oldVersion, int newVersion) async {
+    for (int currentVersion = oldVersion;
+        currentVersion < newVersion;
+        currentVersion++) {
+      switch (currentVersion) {
+        case 1:
+          db.execute("""
+            ALTER TABLE $symWaypoint
+            ADD COLUMN $symTriggerRadius REAL NOT NULL DEFAULT 30
+          """);
+      }
+    }
   }
 }
 
@@ -147,7 +161,7 @@ class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
   Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
     var rows = await db.db.query(
       symWaypoint,
-      columns: [symId, symOrder, symLat, symLng, symName],
+      columns: [symId, symOrder, symLat, symLng, symTriggerRadius, symName],
       orderBy: symOrder,
     );
 
@@ -187,6 +201,7 @@ class PointSummary {
     required this.id,
     required this.lat,
     required this.lng,
+    required this.triggerRadius,
     required this.name,
   });
 
@@ -194,11 +209,15 @@ class PointSummary {
       : id = Uuid(row[symId]! as Uint8List),
         lat = row[symLat]! as double,
         lng = row[symLng]! as double,
+        triggerRadius = row[symTriggerRadius] != null
+            ? row[symTriggerRadius] as double
+            : null,
         name = row[symName] as String?;
 
   final Uuid id;
   final double lat;
   final double lng;
+  final double? triggerRadius;
   final String? name;
 }
 
@@ -249,6 +268,7 @@ const symName = 'name';
 const symDesc = 'desc';
 const symLat = 'lat';
 const symLng = 'lng';
+const symTriggerRadius = 'trigger_radius';
 const symRevision = 'revision';
 const symCreated = 'created';
 const symTimestamp = 'timestamp';
@@ -295,6 +315,7 @@ const _tourSqlOnCreate = """
      $symDesc TEXT,
      $symLat REAL NOT NULL,
      $symLng REAL NOT NULL,
+     $symTriggerRadius REAL NOT NULL,
      $symNarrationPath TEXT,
      $symRevision BLOB NOT NULL,
      $symCreated BLOB NOT NULL,

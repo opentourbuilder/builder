@@ -29,6 +29,7 @@ class Waypoint {
     required this.desc,
     required this.lat,
     required this.lng,
+    required this.triggerRadius,
     required this.narrationPath,
   });
 
@@ -37,6 +38,7 @@ class Waypoint {
         desc = row[symDesc] as String?,
         lat = row[symLat]! as double,
         lng = row[symLng]! as double,
+        triggerRadius = row[symTriggerRadius]! as double,
         narrationPath = row[symNarrationPath] as String?;
 
   Map<String, Object?> _toRow() => {
@@ -44,6 +46,7 @@ class Waypoint {
         symDesc: desc,
         symLat: lat,
         symLng: lng,
+        symTriggerRadius: triggerRadius,
         symNarrationPath: narrationPath,
       };
 
@@ -51,6 +54,7 @@ class Waypoint {
   String? desc;
   double lat;
   double lng;
+  double triggerRadius;
   String? narrationPath;
 }
 
@@ -71,6 +75,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
       symDesc: data.desc,
       symLat: data.lat,
       symLng: data.lng,
+      symTriggerRadius: data.triggerRadius,
       symNarrationPath: symNarrationPath,
       symRevision: currentRevision.bytes,
       symCreated: currentRevision.bytes,
@@ -97,7 +102,14 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
       load: () async {
         var rows = await db.query(
           symWaypoint,
-          columns: [symName, symDesc, symLat, symLng, symNarrationPath],
+          columns: [
+            symName,
+            symDesc,
+            symLat,
+            symLng,
+            symTriggerRadius,
+            symNarrationPath
+          ],
           where: "$symId = ?",
           whereArgs: [waypointId.bytes],
         );
@@ -134,7 +146,15 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
 
     return (await db.query(
       symWaypoint,
-      columns: [symId, symName, symDesc, symLat, symLng, symNarrationPath],
+      columns: [
+        symId,
+        symName,
+        symDesc,
+        symLat,
+        symLng,
+        symTriggerRadius,
+        symNarrationPath
+      ],
     ))
         .map((row) => WaypointWithId(
               id: Uuid(row[symId]! as Uint8List),
@@ -180,6 +200,12 @@ class DbWaypointAccessor implements DbPointAccessor {
   @override
   set lng(double value) {
     state.data.lng = value;
+    _changed();
+  }
+
+  double get triggerRadius => state.data.triggerRadius;
+  set triggerRadius(double value) {
+    state.data.triggerRadius = value;
     _changed();
   }
 
