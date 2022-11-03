@@ -112,6 +112,7 @@ class _WaypointListState extends State<_WaypointList> {
                       lng: 0,
                       triggerRadius: 30,
                       narrationPath: null,
+                      transcript: null,
                     ),
                   );
                 },
@@ -173,32 +174,69 @@ class _WaypointState extends State<_Waypoint> {
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 4.0),
-              Text(
-                widget.summary.name!,
-                style: Theme.of(context).textTheme.titleMedium,
+              Expanded(
+                child: Text(
+                  widget.summary.name!,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Expanded(child: SizedBox()),
-              RawMaterialButton(
-                focusColor: const Color(0x10000088),
-                highlightColor: const Color(0x08000088),
-                hoverColor: const Color(0x08000088),
-                splashColor: const Color(0x08000088),
-                constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                onPressed: () async {
-                  (await db).deleteWaypoint(widget.summary.id);
+              PopupMenuButton(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Theme.of(context).dividerColor),
+                  borderRadius: const BorderRadius.all(Radius.circular(12.0)),
+                ),
+                elevation: 5,
+                position: PopupMenuPosition.under,
+                itemBuilder: (context) {
+                  return <PopupMenuEntry>[
+                    PopupMenuItem(
+                      onTap: widget.onTap,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text("Move Up"),
+                          Icon(Icons.arrow_upward),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      onTap: widget.onTap,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text("Move Down"),
+                          Icon(Icons.arrow_downward),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      onTap: widget.onTap,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text("Edit"),
+                          Icon(Icons.edit),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      onTap: () async {
+                        (await db).deleteWaypoint(widget.summary.id);
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text("Delete"),
+                          Icon(Icons.delete),
+                        ],
+                      ),
+                    ),
+                  ];
                 },
-                child: const Icon(Icons.delete),
-              ),
-              RawMaterialButton(
-                focusColor: const Color(0x10000088),
-                highlightColor: const Color(0x08000088),
-                hoverColor: const Color(0x08000088),
-                splashColor: const Color(0x08000088),
-                constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                onPressed: () {
-                  widget.onTap();
-                },
-                child: const Icon(Icons.edit),
               ),
             ],
           ),
@@ -291,6 +329,22 @@ class _WaypointEditorState extends State<_WaypointEditor> {
                           text: waypoint?.data?.desc ?? ""),
                       onChanged: (desc) {
                         waypoint!.data!.desc = desc;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextField(
+                      decoration: _waypointEditorInputDecoration.copyWith(
+                          labelText: "Transcript"),
+                      minLines: 4,
+                      maxLines: 4,
+                      controller: TextEditingController(
+                          text: waypoint?.data?.transcript ?? ""),
+                      onChanged: (desc) {
+                        if (desc.trim().isNotEmpty) {
+                          waypoint!.data!.transcript = desc;
+                        } else {
+                          waypoint!.data!.transcript = null;
+                        }
                       },
                     ),
                     const SizedBox(height: 16.0),

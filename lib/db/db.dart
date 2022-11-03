@@ -31,7 +31,7 @@ class EvresiDatabase extends EvresiDatabaseBase
     var db = await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onCreate: (db, version) async {
           await db.execute(type == EvresiDatabaseType.tour
               ? _tourSqlOnCreate
@@ -80,6 +80,13 @@ class EvresiDatabase extends EvresiDatabaseBase
             ALTER TABLE $symWaypoint
             ADD COLUMN $symTriggerRadius REAL NOT NULL DEFAULT 30
           """);
+          break;
+        case 2:
+          db.execute("""
+            ALTER TABLE $symWaypoint
+            ADD COLUMN $symTranscript TEXT
+          """);
+          break;
       }
     }
   }
@@ -275,6 +282,7 @@ const symTimestamp = 'timestamp';
 const symUser = 'user';
 const symCommitted = 'committed';
 const symNarrationPath = 'narration_path';
+const symTranscript = 'transcript';
 const symTour = 'tour';
 const symWaypoint = 'waypoint';
 const symPoi = 'poi';
@@ -317,6 +325,7 @@ const _tourSqlOnCreate = """
      $symLng REAL NOT NULL,
      $symTriggerRadius REAL NOT NULL,
      $symNarrationPath TEXT,
+     $symTranscript TEXT,
      $symRevision BLOB NOT NULL,
      $symCreated BLOB NOT NULL,
     PRIMARY KEY ($symId),

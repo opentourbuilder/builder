@@ -114,6 +114,7 @@ class _AssetPickerState extends State<AssetPicker> {
                 labelText: "New asset name",
                 hintText: "Type a name for your new asset.",
                 errorText: newAssetError,
+                suffixText: p.extension(newAssetPath!),
               ),
             ),
           ),
@@ -244,14 +245,14 @@ class _AssetPickerState extends State<AssetPicker> {
   final _assetNameRegex = RegExp(r"^[a-zA-Z0-9 ]+$");
   void _saveNewAsset() async {
     var path = newAssetPath!;
-    var name = newAssetName;
+    var name = "$newAssetName${p.extension(path)}";
 
-    if (name == null || name.isEmpty) {
+    if (newAssetName == null || name.isEmpty) {
       setState(() => newAssetError = "You must provide a name.");
       return;
     }
 
-    if (!_assetNameRegex.hasMatch(name)) {
+    if (!_assetNameRegex.hasMatch(newAssetName!)) {
       setState(() {
         newAssetError = "Allowed characters: alphanumeric and spaces.";
       });

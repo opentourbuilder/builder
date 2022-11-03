@@ -25,9 +25,7 @@ enum AssetType {
     ".jpeg": AssetType.image,
     ".png": AssetType.image,
     ".svg": AssetType.image,
-    ".ogg": AssetType.narration,
     ".mp3": AssetType.narration,
-    ".wav": AssetType.narration,
   });
 }
 
@@ -63,7 +61,7 @@ class AssetDb {
     await for (var asset in Directory(assetsPath).list()) {
       if (asset is! File) continue;
 
-      var name = path.basenameWithoutExtension(asset.path);
+      var name = path.basename(asset.path);
 
       if (!name.toLowerCase().contains(query)) continue;
 
@@ -101,7 +99,7 @@ class AssetDb {
     }
 
     var srcFile = File(assetPath);
-    await srcFile.copy(path.join(assetsPath, "$assetName$extension"));
+    await srcFile.copy(path.join(assetsPath, assetName));
 
     return Asset(assetName, assetType, assetPath);
   }

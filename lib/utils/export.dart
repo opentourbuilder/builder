@@ -36,7 +36,7 @@ Future<void> export({
   }
 
   var json = jsonEncode({
-    "tour": tour,
+    ...tour,
     "pois": pois,
   });
 
@@ -95,6 +95,10 @@ Future<List<String>> _tourUsedAssets(EvresiDatabase tourDb) async {
   for (var waypointWithId in await tourDb.listWaypoints()) {
     var id = waypointWithId.id;
 
+    if (waypointWithId.waypoint.narrationPath != null) {
+      usedAssets.add(waypointWithId.waypoint.narrationPath!);
+    }
+
     var waypointGallery = await tourDb.gallery(id);
     usedAssets.addAll(waypointGallery!.data!.list());
     waypointGallery.dispose();
@@ -131,6 +135,7 @@ Future<dynamic> _tourToJsonObject(EvresiDatabase tourDb) async {
       "lng": waypoint.lng,
       "narration": waypoint.narrationPath,
       "trigger_radius": waypoint.triggerRadius,
+      "transcript": waypoint.transcript,
     };
 
     var waypointGallery = await tourDb.gallery(id);

@@ -31,6 +31,7 @@ class Waypoint {
     required this.lng,
     required this.triggerRadius,
     required this.narrationPath,
+    required this.transcript,
   });
 
   Waypoint._fromRow(Map<String, Object?> row)
@@ -39,7 +40,8 @@ class Waypoint {
         lat = row[symLat]! as double,
         lng = row[symLng]! as double,
         triggerRadius = row[symTriggerRadius]! as double,
-        narrationPath = row[symNarrationPath] as String?;
+        narrationPath = row[symNarrationPath] as String?,
+        transcript = row[symTranscript] as String?;
 
   Map<String, Object?> _toRow() => {
         symName: name,
@@ -48,6 +50,7 @@ class Waypoint {
         symLng: lng,
         symTriggerRadius: triggerRadius,
         symNarrationPath: narrationPath,
+        symTranscript: transcript,
       };
 
   String? name;
@@ -56,6 +59,7 @@ class Waypoint {
   double lng;
   double triggerRadius;
   String? narrationPath;
+  String? transcript;
 }
 
 mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
@@ -76,7 +80,8 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
       symLat: data.lat,
       symLng: data.lng,
       symTriggerRadius: data.triggerRadius,
-      symNarrationPath: symNarrationPath,
+      symNarrationPath: null,
+      symTranscript: null,
       symRevision: currentRevision.bytes,
       symCreated: currentRevision.bytes,
     });
@@ -108,7 +113,8 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
             symLat,
             symLng,
             symTriggerRadius,
-            symNarrationPath
+            symNarrationPath,
+            symTranscript,
           ],
           where: "$symId = ?",
           whereArgs: [waypointId.bytes],
@@ -148,13 +154,16 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
       symWaypoint,
       columns: [
         symId,
+        symOrder,
         symName,
         symDesc,
         symLat,
         symLng,
         symTriggerRadius,
-        symNarrationPath
+        symNarrationPath,
+        symTranscript,
       ],
+      orderBy: symOrder,
     ))
         .map((row) => WaypointWithId(
               id: Uuid(row[symId]! as Uint8List),
@@ -212,6 +221,12 @@ class DbWaypointAccessor implements DbPointAccessor {
   String? get narrationPath => state.data.narrationPath;
   set narrationPath(String? value) {
     state.data.narrationPath = value;
+    _changed();
+  }
+
+  String? get transcript => state.data.transcript;
+  set transcript(String? value) {
+    state.data.transcript = value;
     _changed();
   }
 
