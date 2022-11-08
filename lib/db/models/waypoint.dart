@@ -125,6 +125,79 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
     );
   }
 
+  Future<void> shiftWaypoint(Uuid waypointId, int delta) async {
+    // first, let's get the list of all waypoints
+    var allWaypoints = (await db.query(
+      symWaypoint,
+      columns: [symId],
+      orderBy: symOrder,
+    ))
+        .map((row) => Uuid(row[symId]! as Uint8List))
+        .toList();
+
+    int currentIndex = allWaypoints.indexOf(waypointId);
+    allWaypoints.removeAt(currentIndex);
+
+    allWaypoints.insert(
+        (currentIndex + delta).clamp(0, allWaypoints.length), waypointId);
+
+    await reorderWaypoints(allWaypoints);
+  }
+
+  Future<void> reorderWaypoints(Iterable<Uuid> ordering) async {
+    // first, let's get the list of all waypoints
+    var allWaypoints = (await db.query(
+      symWaypoint,
+      columns: [symId],
+    ))
+        .map((row) => Uuid(row[symId]! as Uint8List))
+        .toList();
+
+    var batch = db.batch();
+
+    // now, let's update the ordering
+    int order = 0;
+    for (var waypointId in ordering) {
+      allWaypoints.remove(waypointId);
+      batch.update(
+        symWaypoint,
+        {
+          symOrder: order,
+        },
+        where: "$symId = ?",
+        whereArgs: [waypointId.bytes],
+      );
+      order++;
+    }
+
+    // set order to null for non-included waypoints (allWaypoints had each
+    // waypoint that was included in the ordering removed from it)
+    for (var waypointId in allWaypoints) {
+      batch.update(
+        symWaypoint,
+        {
+          symOrder: null,
+        },
+        where: "$symId = ?",
+        whereArgs: [waypointId.bytes],
+      );
+    }
+
+    // now, update the tour's revision
+    batch.update(
+      symTour,
+      {
+        symRevision: currentRevision.bytes,
+      },
+    );
+
+    // execute the batch
+    await batch.commit(noResult: true);
+
+    // finally, request the event
+    requestEvent(const WaypointsEventDescriptor());
+  }
+
   Future<void> deleteWaypoint(Uuid waypointId) async {
     if (type != EvresiDatabaseType.tour) {
       throw Exception(

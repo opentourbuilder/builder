@@ -193,7 +193,11 @@ class _WaypointState extends State<_Waypoint> {
                 itemBuilder: (context) {
                   return <PopupMenuEntry>[
                     PopupMenuItem(
-                      onTap: widget.onTap,
+                      onTap: () {
+                        db.then((db) {
+                          db.shiftWaypoint(widget.summary.id, -1);
+                        });
+                      },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: const [
@@ -203,7 +207,11 @@ class _WaypointState extends State<_Waypoint> {
                       ),
                     ),
                     PopupMenuItem(
-                      onTap: widget.onTap,
+                      onTap: () {
+                        db.then((db) {
+                          db.shiftWaypoint(widget.summary.id, 1);
+                        });
+                      },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: const [
