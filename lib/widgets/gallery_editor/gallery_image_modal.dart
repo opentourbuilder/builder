@@ -80,7 +80,7 @@ class _GalleryImageModalState extends State<GalleryImageModal> {
   @override
   Widget build(BuildContext context) {
     var selectedAssetFile =
-        selectedAsset != null ? File(selectedAsset!.fullPath) : null;
+        selectedAsset != null ? File(selectedAsset!.localPath) : null;
 
     return FractionallySizedBox(
       heightFactor: 0.8,

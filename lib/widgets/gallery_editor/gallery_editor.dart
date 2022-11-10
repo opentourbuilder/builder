@@ -191,7 +191,7 @@ class _GalleryEditorSmallImageState extends State<_GalleryEditorSmallImage> {
           builder: (context, snapshot) {
             if (snapshot.data != null) {
               return Image.file(
-                File((snapshot.data! as Asset).fullPath),
+                File((snapshot.data! as Asset).localPath),
                 fit: BoxFit.cover,
               );
             } else {

@@ -174,7 +174,7 @@ Future<void> _runBundle(_Message message) async {
     var assets = await message.assetDb.list();
     assets.removeWhere((element) => !message.assetNames.contains(element.name));
     for (var asset in assets) {
-      zipEncoder.addFile(File(asset.fullPath), "assets/${asset.name}");
+      zipEncoder.addFile(File(asset.localPath), "assets/${asset.name}");
     }
 
     zipEncoder
