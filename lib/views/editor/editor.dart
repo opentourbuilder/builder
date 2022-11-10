@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:builder/views/editor/asset_manager/asset_manager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -145,6 +146,10 @@ class _EditorPageState extends State<EditorPage> {
                 },
               );
             },
+            onManageAssetsPressed: () {
+              setState(() => _currentPage =
+                  AssetManagerScreen(key: _currentPageKey = GlobalKey()));
+            },
           ),
           Expanded(
             child: Row(
@@ -169,6 +174,7 @@ class TopBar extends StatefulWidget {
     required this.onOpenPressed,
     required this.showExportTour,
     required this.onExportTourPressed,
+    required this.onManageAssetsPressed,
   });
 
   final void Function() onNewTourPressed;
@@ -176,6 +182,7 @@ class TopBar extends StatefulWidget {
   final void Function() onOpenPressed;
   final bool showExportTour;
   final void Function() onExportTourPressed;
+  final void Function() onManageAssetsPressed;
 
   @override
   State<TopBar> createState() => _TopBarState();
@@ -227,6 +234,12 @@ class _TopBarState extends State<TopBar> {
                 text: "Export Tour...",
                 onPressed: widget.onExportTourPressed,
               ),
+            _button(
+              context,
+              icon: Icons.image,
+              text: "Manage Assets...",
+              onPressed: widget.onManageAssetsPressed,
+            ),
             if (!Platform.isMacOS) Expanded(child: MoveWindow()),
             if (!Platform.isMacOS) MinimizeWindowButton(colors: buttonColors),
             if (!Platform.isMacOS) MaximizeWindowButton(colors: buttonColors),
