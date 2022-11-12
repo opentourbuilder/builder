@@ -59,7 +59,7 @@ class _WaypointListState extends State<_WaypointList> {
   void initState() {
     super.initState();
 
-    var db = context.read<Future<EvresiDatabase>>();
+    var db = context.read<Future<OtbDatabase>>();
 
     (() async {
       if (_eventsSubscription == null) {
@@ -85,7 +85,7 @@ class _WaypointListState extends State<_WaypointList> {
 
   @override
   Widget build(BuildContext context) {
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     return ListView.builder(
       padding: const EdgeInsets.all(12.0),
@@ -151,7 +151,7 @@ class _Waypoint extends StatefulWidget {
 class _WaypointState extends State<_Waypoint> {
   @override
   Widget build(BuildContext context) {
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     return Card(
       key: ValueKey(widget.summary.id),
@@ -290,7 +290,7 @@ class _WaypointEditorState extends State<_WaypointEditor> {
     if (widget.selectedWaypoint != oldWidget.selectedWaypoint) {
       if (widget.selectedWaypoint != null) {
         context
-            .read<Future<EvresiDatabase>>()
+            .read<Future<OtbDatabase>>()
             .then((db) => db.waypoint(widget.selectedWaypoint!))
             .then((value) {
           waypoint?.dispose();

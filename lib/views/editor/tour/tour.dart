@@ -23,13 +23,13 @@ class TourEditorState extends State<TourEditor> {
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
 
-  late Future<EvresiDatabase> db;
+  late Future<OtbDatabase> db;
 
   @override
   void initState() {
     super.initState();
 
-    db = EvresiDatabase.open(widget.path, EvresiDatabaseType.tour);
+    db = OtbDatabase.open(widget.path, OtbDatabaseType.tour);
   }
 
   @override
@@ -41,7 +41,7 @@ class TourEditorState extends State<TourEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Provider<Future<EvresiDatabase>>.value(
+    return Provider<Future<OtbDatabase>>.value(
       value: db,
       child: LayoutBuilder(builder: (context, constraints) {
         final contentEditor = _TourContentEditor(
@@ -109,7 +109,7 @@ class _TourContentEditorState extends State<_TourContentEditor> {
   void initState() {
     super.initState();
 
-    context.read<Future<EvresiDatabase>>().then((db) => db.tour()).then((tour) {
+    context.read<Future<OtbDatabase>>().then((db) => db.tour()).then((tour) {
       tour?.listen((() {
         setState(() {});
       }));

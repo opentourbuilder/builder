@@ -26,7 +26,7 @@ class _PoisState extends State<Pois> {
   final _contentEditorKey = GlobalKey();
   final _mapKey = GlobalKey();
 
-  late Future<EvresiDatabase> db;
+  late Future<OtbDatabase> db;
 
   Uuid? selectedPoi;
 
@@ -38,7 +38,7 @@ class _PoisState extends State<Pois> {
   void initState() {
     super.initState();
 
-    db = EvresiDatabase.open(widget.path, EvresiDatabaseType.poiSet);
+    db = OtbDatabase.open(widget.path, OtbDatabaseType.poiSet);
 
     db.then((db) {
       _eventsSubscription = db.events.listen(_onEvent);
@@ -150,7 +150,7 @@ class _PoiList extends StatefulWidget {
 class _PoiListState extends State<_PoiList> {
   @override
   Widget build(BuildContext context) {
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     return ListView.builder(
       padding: const EdgeInsets.all(12.0),
@@ -211,7 +211,7 @@ class _Poi extends StatefulWidget {
 class _PoiState extends State<_Poi> {
   @override
   Widget build(BuildContext context) {
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     return Card(
       key: ValueKey(widget.summary.id),
@@ -301,7 +301,7 @@ class _PoiEditorState extends State<_PoiEditor> {
 
   @override
   Widget build(BuildContext context) {
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     if (widget.selectedPoi != poiId) {
       poiId = widget.selectedPoi;

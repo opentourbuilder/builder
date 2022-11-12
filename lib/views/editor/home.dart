@@ -16,7 +16,7 @@ class Home extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Welcome to the Evresi tour builder!", style: style),
+            Text("Welcome to the OpenTourBuilder!", style: style),
             const SizedBox(height: 8.0),
             Text(
                 "To get started, try creating a tour by clicking 'New Tour...' in the top bar above.",

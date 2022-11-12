@@ -30,11 +30,11 @@ class Tour {
   String desc;
 }
 
-mixin EvresiDatabaseTourMixin on EvresiDatabaseBase {
+mixin OtbDatabaseTourMixin on OtbDatabaseBase {
   static final _blankTour = Tour(name: "Untitled", desc: "");
 
   Future<DbTour?> tour() async {
-    if (type != EvresiDatabaseType.tour) {
+    if (type != OtbDatabaseType.tour) {
       throw Exception(
           "Attempted to use Tour-only method in non-Tour database.");
     }

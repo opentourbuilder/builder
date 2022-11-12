@@ -8,8 +8,8 @@ import 'package:path_provider/path_provider.dart';
 late AssetDb _db;
 
 Future<void> initAssetDatabase() async {
-  var assetsPath = path.join(
-      (await getApplicationDocumentsDirectory()).path, "EvresiProjects");
+  var assetsPath =
+      path.join((await getApplicationDocumentsDirectory()).path, "OTBAssets");
 
   await Directory(assetsPath).create(recursive: true);
 

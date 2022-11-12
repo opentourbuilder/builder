@@ -9,7 +9,7 @@ String getInstallDirectory() {
       return path.join(Directory.current.path, "install");
     } else {
       return path.join(
-          Platform.environment["LOCALAPPDATA"]!, "EvresiBuilderDebugInstall");
+          Platform.environment["LOCALAPPDATA"]!, "OpenTourBuilderDebugInstall");
     }
   } else {
     return path.dirname(Platform.resolvedExecutable);

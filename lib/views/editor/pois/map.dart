@@ -14,7 +14,7 @@ class PoiMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     return FlutterMap(
       options: MapOptions(
@@ -31,7 +31,7 @@ class PoiMap extends StatelessWidget {
       children: [
         TileLayer(
           urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-          userAgentPackageName: "org.evresi.builder",
+          userAgentPackageName: "org.opentourbuilder.builder",
         ),
         DragMarkers(
           markers: [

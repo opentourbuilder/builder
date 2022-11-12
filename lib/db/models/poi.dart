@@ -49,9 +49,9 @@ class Poi {
   double lng;
 }
 
-mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
+mixin OtbDatabasePoiMixin on OtbDatabaseBase {
   Future<DbPoi> createPoi(Poi data) async {
-    if (type != EvresiDatabaseType.poiSet) {
+    if (type != OtbDatabaseType.poiSet) {
       throw Exception("Attempted to use POI-only method in non-POI database.");
     }
 
@@ -78,7 +78,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   }
 
   Future<DbPoi?> poi(Uuid poiId) async {
-    if (type != EvresiDatabaseType.poiSet) {
+    if (type != OtbDatabaseType.poiSet) {
       throw Exception("Attempted to use POI-only method in non-POI database.");
     }
 
@@ -98,7 +98,7 @@ mixin EvresiDatabasePoiMixin on EvresiDatabaseBase {
   }
 
   Future<void> deletePoi(Uuid poiId) async {
-    if (type != EvresiDatabaseType.poiSet) {
+    if (type != OtbDatabaseType.poiSet) {
       throw Exception("Attempted to use POI-only method in non-POI database.");
     }
 

@@ -13,7 +13,7 @@ import '../db/db.dart';
 class _ContentExporter {
   _ContentExporter(this._tourDb, this._poiSetPaths);
 
-  final EvresiDatabase _tourDb;
+  final OtbDatabase _tourDb;
   final List<String> _poiSetPaths;
   final Map<String, String> _assetRenameMap = {};
 
@@ -22,8 +22,7 @@ class _ContentExporter {
 
     var pois = [];
     for (var poiSetPath in _poiSetPaths) {
-      var poiDb =
-          await EvresiDatabase.open(poiSetPath, EvresiDatabaseType.poiSet);
+      var poiDb = await OtbDatabase.open(poiSetPath, OtbDatabaseType.poiSet);
       pois.addAll(await _buildPoiSetJson(poiDb));
       poiDb.close();
     }
@@ -84,7 +83,7 @@ class _ContentExporter {
     });
   }
 
-  Future<List<dynamic>> _buildPoiSetJson(EvresiDatabase poiDb) async {
+  Future<List<dynamic>> _buildPoiSetJson(OtbDatabase poiDb) async {
     return [
       for (var it in await poiDb.listPois())
         {
@@ -141,7 +140,7 @@ class _ContentExport {
 }
 
 Future<void> export({
-  required Future<EvresiDatabase> db,
+  required Future<OtbDatabase> db,
   required List<String> sourcePoiSets,
   required Future<String?> Function() promptForDestFile,
 }) async {

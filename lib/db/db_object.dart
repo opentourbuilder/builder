@@ -70,7 +70,7 @@ abstract class DbObject<DataAccessor, Id, Data> {
 class DbObjectState<Id, Data> {
   DbObjectState(this.db, this.id, this.data);
 
-  final EvresiDatabaseBase db;
+  final OtbDatabaseBase db;
   final Id id;
   final Data data;
   final Map<Object, void Function(bool deleted)> _instances = {};

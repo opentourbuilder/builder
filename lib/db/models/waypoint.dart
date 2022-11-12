@@ -62,9 +62,9 @@ class Waypoint {
   String? transcript;
 }
 
-mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
+mixin OtbDatabaseWaypointMixin on OtbDatabaseBase {
   Future<DbWaypoint> createWaypoint(Waypoint data) async {
-    if (type != EvresiDatabaseType.tour) {
+    if (type != OtbDatabaseType.tour) {
       throw Exception(
           "Attempted to use Tour-only method in non-Tour database.");
     }
@@ -97,7 +97,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
   }
 
   Future<DbWaypoint?> waypoint(Uuid waypointId) async {
-    if (type != EvresiDatabaseType.tour) {
+    if (type != OtbDatabaseType.tour) {
       throw Exception(
           "Attempted to use Tour-only method in non-Tour database.");
     }
@@ -199,7 +199,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
   }
 
   Future<void> deleteWaypoint(Uuid waypointId) async {
-    if (type != EvresiDatabaseType.tour) {
+    if (type != OtbDatabaseType.tour) {
       throw Exception(
           "Attempted to use Tour-only method in non-Tour database.");
     }
@@ -218,7 +218,7 @@ mixin EvresiDatabaseWaypointMixin on EvresiDatabaseBase {
   }
 
   Future<List<WaypointWithId>> listWaypoints() async {
-    if (type != EvresiDatabaseType.tour) {
+    if (type != OtbDatabaseType.tour) {
       throw Exception(
           "Attempted to use Tour-only method in non-Tour database.");
     }

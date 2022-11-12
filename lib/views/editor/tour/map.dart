@@ -32,7 +32,7 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
 
-    var db = context.read<Future<EvresiDatabase>>();
+    var db = context.read<Future<OtbDatabase>>();
 
     (() async {
       if (_eventsSubscription == null) {
@@ -64,7 +64,7 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
   Widget build(BuildContext context) {
     super.build(context);
 
-    var db = context.watch<Future<EvresiDatabase>>();
+    var db = context.watch<Future<OtbDatabase>>();
 
     return FlutterMap(
       options: MapOptions(
@@ -81,7 +81,7 @@ class _TourMapState extends State<TourMap> with AutomaticKeepAliveClientMixin {
       children: [
         TileLayer(
           urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-          userAgentPackageName: "org.evresi.builder",
+          userAgentPackageName: "org.opentourbuilder.builder",
         ),
         PolylineLayer(
           polylineCulling: false,

@@ -30,7 +30,7 @@ class _GalleryEditorState extends State<GalleryEditor> {
     super.initState();
 
     context
-        .read<Future<db.EvresiDatabase>>()
+        .read<Future<db.OtbDatabase>>()
         .then((db) => db.gallery(widget.itemId))
         .then((value) => setState(() => gallery = value));
   }
@@ -40,7 +40,7 @@ class _GalleryEditorState extends State<GalleryEditor> {
     super.didUpdateWidget(oldWidget);
 
     context
-        .read<Future<db.EvresiDatabase>>()
+        .read<Future<db.OtbDatabase>>()
         .then((db) => db.gallery(widget.itemId))
         .then((value) => setState(() => gallery = value));
   }

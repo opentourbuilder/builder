@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class EvresiPageRoute<T> extends PageRoute<T> {
-  EvresiPageRoute(this.builder);
+class OtbPageRoute<T> extends PageRoute<T> {
+  OtbPageRoute(this.builder);
 
   Widget Function(BuildContext) builder;
 

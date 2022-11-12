@@ -13,27 +13,26 @@ import 'models/waypoint.dart';
 
 export './db_object.dart';
 
-enum EvresiDatabaseType {
+enum OtbDatabaseType {
   tour,
   poiSet,
 }
 
-class EvresiDatabase extends EvresiDatabaseBase
+class OtbDatabase extends OtbDatabaseBase
     with
-        EvresiDatabaseWaypointMixin,
-        EvresiDatabaseTourMixin,
-        EvresiDatabaseGalleryMixin,
-        EvresiDatabasePoiMixin {
-  EvresiDatabase._(super.db, super.type, super.currentRevision) : super._();
+        OtbDatabaseWaypointMixin,
+        OtbDatabaseTourMixin,
+        OtbDatabaseGalleryMixin,
+        OtbDatabasePoiMixin {
+  OtbDatabase._(super.db, super.type, super.currentRevision) : super._();
 
-  static Future<EvresiDatabase> open(
-      String path, EvresiDatabaseType type) async {
+  static Future<OtbDatabase> open(String path, OtbDatabaseType type) async {
     var db = await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
         version: 3,
         onCreate: (db, version) async {
-          await db.execute(type == EvresiDatabaseType.tour
+          await db.execute(type == OtbDatabaseType.tour
               ? _tourSqlOnCreate
               : _poiSetSqlOnCreate);
         },
@@ -66,7 +65,7 @@ class EvresiDatabase extends EvresiDatabaseBase
       currentRevision = uncommittedRevisions[0];
     }
 
-    return EvresiDatabase._(db, type, currentRevision);
+    return OtbDatabase._(db, type, currentRevision);
   }
 
   static FutureOr<void> _onUpgrade(
@@ -92,8 +91,8 @@ class EvresiDatabase extends EvresiDatabaseBase
   }
 }
 
-class EvresiDatabaseBase {
-  final EvresiDatabaseType type;
+class OtbDatabaseBase {
+  final OtbDatabaseType type;
   Uuid currentRevision;
   Database? _db;
   Database get db => _db!; // _db should only be null if the DB was closed
@@ -104,7 +103,7 @@ class EvresiDatabaseBase {
   final StreamController<Event> _events = StreamController.broadcast();
   Stream<Event> get events => _events.stream;
 
-  EvresiDatabaseBase._(this._db, this.type, this.currentRevision);
+  OtbDatabaseBase._(this._db, this.type, this.currentRevision);
 
   Future<void> close() async {
     var temp = db;
@@ -158,14 +157,14 @@ class Event<D extends EventDescriptor<T>, T> {
 abstract class EventDescriptor<T> {
   const EventDescriptor();
 
-  Future<T> _observe(EvresiDatabaseBase db);
+  Future<T> _observe(OtbDatabaseBase db);
 }
 
 class WaypointsEventDescriptor extends EventDescriptor<List<PointSummary>> {
   const WaypointsEventDescriptor();
 
   @override
-  Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
+  Future<List<PointSummary>> _observe(OtbDatabaseBase db) async {
     var rows = await db.db.query(
       symWaypoint,
       columns: [symId, symOrder, symLat, symLng, symTriggerRadius, symName],
@@ -186,7 +185,7 @@ class PoisEventDescriptor extends EventDescriptor<List<PointSummary>> {
   const PoisEventDescriptor();
 
   @override
-  Future<List<PointSummary>> _observe(EvresiDatabaseBase db) async {
+  Future<List<PointSummary>> _observe(OtbDatabaseBase db) async {
     var rows = await db.db.query(
       symPoi,
       columns: [symId, symLat, symLng, symName],

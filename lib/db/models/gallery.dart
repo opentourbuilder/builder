@@ -18,7 +18,7 @@ class Gallery {
   List<String> list;
 }
 
-mixin EvresiDatabaseGalleryMixin on EvresiDatabaseBase {
+mixin OtbDatabaseGalleryMixin on OtbDatabaseBase {
   Future<DbGallery> gallery(Uuid itemId) async {
     return (await load<DbGallery, GalleryId, Gallery>(
       id: GalleryId(itemId),

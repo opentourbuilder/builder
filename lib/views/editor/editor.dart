@@ -33,10 +33,10 @@ class _EditorPageState extends State<EditorPage> {
           TopBar(
             onNewTourPressed: () async {
               var chosenPath = await FilePicker.platform.saveFile(
-                dialogTitle: 'New Evresi Tour File',
-                fileName: 'Untitled.evtour',
+                dialogTitle: 'New Tour File',
+                fileName: 'Untitled.otbtour',
                 type: FileType.custom,
-                allowedExtensions: ["evtour"],
+                allowedExtensions: ["otbtour"],
               );
 
               if (chosenPath != null) {
@@ -46,10 +46,10 @@ class _EditorPageState extends State<EditorPage> {
             },
             onNewPoiSetPressed: () async {
               var chosenPath = await FilePicker.platform.saveFile(
-                dialogTitle: 'New Evresi POI Set File',
-                fileName: 'Untitled.evpoi',
+                dialogTitle: 'New POI Set File',
+                fileName: 'Untitled.otbpoi',
                 type: FileType.custom,
-                allowedExtensions: ["evpoi"],
+                allowedExtensions: ["otbpoi"],
               );
 
               if (chosenPath != null) {
@@ -59,9 +59,9 @@ class _EditorPageState extends State<EditorPage> {
             },
             onOpenPressed: () async {
               var chosenPath = (await FilePicker.platform.pickFiles(
-                dialogTitle: 'Open Evresi File',
+                dialogTitle: 'Open File',
                 type: FileType.custom,
-                allowedExtensions: ["evtour", "evpoi"],
+                allowedExtensions: ["otbtour", "otbpoi"],
               ))
                   ?.files
                   .single
@@ -70,10 +70,10 @@ class _EditorPageState extends State<EditorPage> {
               if (chosenPath != null) {
                 var ext = path.extension(chosenPath);
 
-                if (ext == ".evtour") {
+                if (ext == ".otbtour") {
                   setState(() => _currentPage = TourEditor(
                       key: _currentPageKey = GlobalKey(), path: chosenPath));
-                } else if (ext == ".evpoi") {
+                } else if (ext == ".otbpoi") {
                   setState(() => _currentPage = Pois(
                       key: _currentPageKey = GlobalKey(), path: chosenPath));
                 } else {
@@ -86,7 +86,7 @@ class _EditorPageState extends State<EditorPage> {
               var sourcePoiSets = (await FilePicker.platform.pickFiles(
                 dialogTitle: 'Choose POI Sets for Tour Export',
                 type: FileType.custom,
-                allowedExtensions: ["evpoi"],
+                allowedExtensions: ["otbpoi"],
                 allowMultiple: true,
               ))
                   ?.files
