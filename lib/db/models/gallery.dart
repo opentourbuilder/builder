@@ -19,8 +19,8 @@ class Gallery {
 }
 
 mixin EvresiDatabaseGalleryMixin on EvresiDatabaseBase {
-  Future<DbGallery?> gallery(Uuid itemId) async {
-    return load<DbGallery, GalleryId, Gallery>(
+  Future<DbGallery> gallery(Uuid itemId) async {
+    return (await load<DbGallery, GalleryId, Gallery>(
       id: GalleryId(itemId),
       load: () async {
         var items = await db.query(
@@ -34,7 +34,7 @@ mixin EvresiDatabaseGalleryMixin on EvresiDatabaseBase {
         return Gallery([...items.map((e) => e[symPath]! as String)]);
       },
       createObject: (state) => DbGallery._(state),
-    );
+    ))!;
   }
 }
 

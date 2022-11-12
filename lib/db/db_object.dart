@@ -56,6 +56,15 @@ abstract class DbObject<DataAccessor, Id, Data> {
   void dispose() {
     _state?.dispose(this);
   }
+
+  /// Calls the callback with [data] and then disposes this object.
+  ///
+  /// If [data] is null, then throws an exception.
+  T use<T>(T Function(DataAccessor data) f) {
+    var res = f(data as DataAccessor);
+    dispose();
+    return res;
+  }
 }
 
 class DbObjectState<Id, Data> {

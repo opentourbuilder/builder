@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -47,6 +49,7 @@ class Asset {
   final String _localPathBase;
 
   AssetType get type => AssetType.extensionMap[path.extension(name)]!;
+  String get extension => path.extension(name);
   String get localPath => path.join(_localPathBase, name);
 
   Future<String?> get attribution async {
@@ -112,6 +115,21 @@ class Asset {
     } on FileSystemException catch (_) {
       // Don't care if any of the files didn't exist
     }
+  }
+
+  Future<String> calculateHash() async {
+    var output = AccumulatorSink<Digest>();
+    var input = sha256.startChunkedConversion(output);
+
+    await for (var chunk in File(localPath).openRead()) {
+      input.add(chunk);
+    }
+
+    input.close();
+
+    var digest = output.events.single;
+
+    return digest.toString();
   }
 }
 
