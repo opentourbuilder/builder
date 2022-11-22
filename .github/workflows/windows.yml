@@ -1,7 +1,16 @@
 name: Windows Build & Automatic Release
 
 on:
-  [push, pull_request]:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - macos/
+      - linux/
+      - .github/workflows/macos.yml
+      - .github/workflows/linux.yml
+      - README.md
+
+  pull_request:
     branches: [ "main" ]
     paths-ignore:
       - macos/
