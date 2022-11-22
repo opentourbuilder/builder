@@ -34,13 +34,13 @@ jobs:
         with:
           channel: 'stable'
         run: |
-        flutter pub get
-        flutter config --enable-windows-desktop
+          flutter pub get
+          flutter config --enable-windows-desktop
 
       - name: Build
         run: |
-        flutter build windows
-        7z a windows.zip ${{github.workspace}}/build/windows/runner/Release
+          flutter build windows
+          7z a windows.zip ${{github.workspace}}/build/windows/runner/Release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
