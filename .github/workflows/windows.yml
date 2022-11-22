@@ -1,15 +1,7 @@
-name: Windows
+name: Windows Build & Automatic Release
 
 on:
-  push:
-    branches: [ "main" ]
-    paths-ignore:
-      - macos/
-      - linux/
-      - .github/workflows/macos.yml
-      - .github/workflows/linux.yml
-      - README.md
-  pull_request:
+  [push, pull_request]:
     branches: [ "main" ]
     paths-ignore:
       - macos/
@@ -23,15 +15,32 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v3
-    - uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
-    - run: flutter config --enable-windows-desktop
-    - run: flutter pub get
-    - run: flutter build windows
-    - uses: actions/upload-artifact@v3
-      with:
-        name: bundle
-        path: ${{github.workspace}}/build/windows/runner/Release
+      - name: Checkout Repository
+      - uses: actions/checkout@v3
+
+      - name: Configure Build Dependencies
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter config --enable-windows-desktop
+
+      - name: Build
+      - run: flutter build windows
+      - run: 7z a windows.zip ${{github.workspace}}/build/windows/runner/Release
+
+      - name: Upload Artifact
+      - uses: actions/upload-artifact@v3
+        with:
+          name: windows
+          path: windows.zip
+
+      - name: Automatic Release
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
+          automatic_release_tag: latest
+          files: windows.zip
