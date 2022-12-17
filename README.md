@@ -5,7 +5,13 @@
 
 The OpenTourBuilder.
 
-## Note for development
-The tour builder needs some files bundled alongside its executable. On MacOS and Linux, these files
-can be placed in a subdirectory of this directory named `install`. On Windows, these files must be
-placed in `C:\Users\%USERNAME%\AppData\Local\OpenTourBuilderDebugInstall`.
+## Development setup
+This application needs some files bundled alongside its executable. During development, these files
+are put in a different place to reduce the burden on developers. On MacOS and Linux, this place is a
+subdirectory of this one named `install`. On Windows, these files must be placed in
+`C:\Users\%USERNAME%\AppData\Local\OpenTourBuilderDebugInstall`.
+
+The required files are as follows:
+- `geocodio.json` - A JSON file containing the Geocodio API key. The format is `{ "api_key": "<Geocodio API key>" }`.
+- `lotyr/<Lotyr shared library name>` - The shared library for the Lotyr library for the current platform.
+- `lotyr/valhalla.json` - A Valhalla configuration file that the tour builder will use to initialize Lotyr.
